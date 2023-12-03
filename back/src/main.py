@@ -1,7 +1,13 @@
-from fastapi import FastAPI
-from wrapped_connection import WrappedConnection
+from fastapi  import FastAPI
 from pydantic import BaseModel
+from dotenv   import load_dotenv
+from wrapped_connection    import WrappedConnection
 from model_query_converter import ModelQueryConverter
+import os
+
+print('Staring in folder:', os.getcwd())
+
+load_dotenv()
 
 class CarModel(BaseModel):
     year        : int   | None
@@ -26,15 +32,19 @@ class CarModelID(CarModel):
 class EmptyModel(BaseModel):
     pass
 
-
 mcq_car: ModelQueryConverter = ModelQueryConverter('car_schema.car_table', CarModel)
 mcq_car.add_internal_columns({
     'car_id': 'SERIAL PRIMARY KEY',
 })
 
 wconn: WrappedConnection = WrappedConnection(
-    'localhost', 5432,
-    'car_db', 'car_db_admin', 'car_db_password'
+    # 'localhost', 5432,
+    # 'car_db', 'car_db_admin', 'car_db_password'
+    os.getenv('car_db_host'),
+    int(os.getenv('car_db_port')),
+    os.getenv('car_db_db'),
+    os.getenv('car_db_username'),
+    os.getenv('car_db_password'),
 )
 
 wconn.connect()

@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  back:
+    image: car_back
+    environment:
+      car_db_host: "192.168.56.1"
+      car_db_port: 5432
+      car_db_db: "car_db"
+      car_db_username: "car_db_admin"
+      car_db_password: "car_db_password"
+    build:
+      ./
+    ports:
+      - 7000:8000
+
+# networks:
+#   services:
+#     name: services
+#     driver: bridge
