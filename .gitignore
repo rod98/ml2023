@@ -3,3 +3,5 @@ pyenv/
 __pychache__
 __pycache__
 telegram_bot.ini
+.idea/
+.idea
