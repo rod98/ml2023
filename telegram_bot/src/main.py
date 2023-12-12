@@ -11,11 +11,11 @@ from flask import Response
 from pyngrok import ngrok
 from dotenv  import load_dotenv
 
-from api_wrapper import MlApi
+from ml_api_wrapper import MlApi
 
 # from googletrans import Translator
 
-from telegram_api import SimpleTelegramApi
+from telegram_api    import SimpleTelegramApi
 from model_formatter import ModelFormatter
 
 # config = configparser.ConfigParser()
@@ -30,7 +30,7 @@ print('telegram token:', telegram_token)
 # translator = Translator()
 ml_api = MlApi(api_url, api_port)
 
-model_formatter = ModelFormatter()
+model_formatter = ModelFormatter(translate=True)
 
 class TunneledApp(Flask):
     def __init__(self, *args, **kwargs):
@@ -66,7 +66,7 @@ class TunneledApp(Flask):
 
         print('last_msg_id:', self.last_msg_id)
 
-    def process_message_text(self, chat_id, msg_id, text):
+    def process_message_text(self, chat_id, msg_id, text) -> str | list[str] | dict:
         # response = translator.translate(text)
 
         try:
@@ -75,31 +75,45 @@ class TunneledApp(Flask):
             if tokens[0].lower() in ['raw_get', 'get', 'rawget']:
                 _id = tokens[-1]
                 text = ml_api.get_car(uuid.UUID(_id)).text
-                text = model_formatter.format(text)
+                text = [model_formatter.format(text)]
+            elif tokens[0].lower() in ['search']:
+                # tokens = tokens[1:]
+                lines = text.split('\n')[1:]
+
+                criteria = {}
+                for line in lines:
+                    tokens = line.split()
+                    if len(tokens) == 2:
+                        tokens.append(tokens[-1])
+
+                    print(f'{tokens[0]}\t is between {tokens[1]} and {tokens[2]}')
+                    criteria[tokens[0]] = [tokens[1], tokens[2]]
+
+                texts = json.loads(ml_api.search_cars(criteria).text)
+                text  = [model_formatter.format(text) for text in texts]
+
+                print('Found:')
+                print(text)
             else:
                 text = '=^.^='
         except Exception as e:
-            text = str(e)
+            text = '[ERROR]\n' + str(e)
 
         return text
 
     def process_message(self, msg):
         sjson = self.parse_message(msg)
-        response = app.process_message_text(
+        responses = app.process_message_text(
             sjson['chat_id'],
             sjson['msg_id'],
             sjson['msg_txt'],
         )
 
-        # self.telapi.delete_message(sjson['chat_id'], sjson['msg_id'])
-        # if self.last_msg_id:
-        #     print('last_msg_id:', self.last_msg_id)
-        #     r = self.telapi.edit_message(sjson['chat_id'], self.last_msg_id, response)
-        #     if not r.get('ok') and r.get(
-        #             'description') != 'Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message':
-        #         self.tel_send_message(sjson['chat_id'], response)
-        # else:
-        self.tel_send_message(sjson['chat_id'], response)
+        if isinstance(responses, str):
+            responses = [responses]
+
+        for resp in responses:
+            self.tel_send_message(sjson['chat_id'], resp)
 
 def create_app():
     tele_app = TunneledApp(__name__)

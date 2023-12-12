@@ -13,7 +13,8 @@ class SimpleTelegramApi:
         url = f'https://api.telegram.org/bot{self.api_token}/sendMessage'
         payload = {
             'chat_id': chat_id,
-            'text': text
+            'text': text,
+            'parse_mode': 'html'
         }
 
         r = requests.post(url, json=payload).json()
