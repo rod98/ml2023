@@ -1,8 +1,9 @@
-from fastapi  import FastAPI
+from fastapi  import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv   import load_dotenv
 from wrapped_connection    import WrappedConnection
 from model_query_converter import ModelQueryConverter
+import uuid
 import os
 
 print('Staring in folder:', os.getcwd())
@@ -24,18 +25,23 @@ class CarModel(BaseModel):
     interior    : str   | None
     seller      : str   | None
     mmr         : str   | None
-    sellingprice: int   | None   
+    sellingprice: int   | None
 
-class CarModelID(CarModel):
-    car_id: int
+class CarModelWithUUID(CarModel):
+    car_id: uuid.UUID
+
+    def __init__(self, uu_id, car):
+        super().__init__(car_id=uu_id, **car.model_dump())
 
 class EmptyModel(BaseModel):
     pass
 
-mcq_car: ModelQueryConverter = ModelQueryConverter('car_schema.car_table', CarModel)
-mcq_car.add_internal_columns({
-    'car_id': 'SERIAL PRIMARY KEY',
-})
+
+mcq_car      : ModelQueryConverter = ModelQueryConverter('car_schema.car_table', CarModel)
+mcq_car_wuuid: ModelQueryConverter = ModelQueryConverter('car_schema.car_table', CarModelWithUUID)
+# mcq_car_wuuid.add_internal_columns({
+#     'car_id': 'uuid PRIMARY KEY',
+# })
 
 wconn: WrappedConnection = WrappedConnection(
     # 'localhost', 5432,
@@ -56,56 +62,80 @@ async def root():
 
 @app.post("/init_db")
 async def init_db():
-    create_query = mcq_car.create_query()
+    create_query = mcq_car_wuuid.create_query()
     logs = []
-    wconn.executemany(create_query)
+    try:
+        wconn.executemany(create_query)
+    except Exception as e:
+        logs.append(e)
+        raise HTTPException(400, detail=str(e))
     # try:
     #     wconn.executemany(create_query)
     # except Exception as e:
     #     logs.append(e)
-    return {"message": "hmm", "logs": logs}
+    return {"message": "DB initialization"}
 
 @app.get("/car/{car_id}")
-async def get_car(car_id: int) -> CarModel | EmptyModel:
-    query = mcq_car.select_query(f"car_id = {car_id}")
+async def get_car(car_id: uuid.UUID) -> CarModel | EmptyModel:
+    try:
+        query = mcq_car_wuuid.select_query(f"car_id = '{car_id}'")
 
-    res = wconn.execute_and_fetch_all(query)[0]
-    if not res:
-        return EmptyModel()
+        res = wconn.execute_and_fetch_all(query)[0]
+        if not res:
+            return EmptyModel()
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
 
     return CarModel.model_validate(res)
 
 @app.put("/car/{car_id}")
-async def update_car(car_id: int, car: CarModel) -> CarModel:
+async def update_car(car_id: uuid.UUID, car: CarModel) -> CarModel:
     # car = await get_car(car_id)
-    query = mcq_car.update_query(f"car_id = {car_id}")
-    wconn.executemany(
-        query,
-        [mcq_car.model2list(car)]
-    )
+    try:
+        query = mcq_car.update_query(f"car_id = '{car_id}'")
+        wconn.executemany(
+            query,
+            [mcq_car_wuuid.model2list(car)]
+        )
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
     # print(car)
     return CarModel.model_validate(car)
 
 @app.patch("/car/{car_id}")
-async def patch_car(car_id: int, car: dict) -> CarModel:
-    existing_car = await get_car(car_id)
-    query = mcq_car.update_query(f"car_id = {car_id}", car.keys())
-    d = existing_car.model_dump()
-    # d.update(car.dump())
-    d.update(car)
-    d = CarModel.model_validate(d)
-    wconn.executemany(
-        query,
-        [mcq_car.model2list(d)]
-    )
+async def patch_car(car_id: uuid.UUID, car: dict) -> CarModel:
+    try:
+        existing_car = await get_car(car_id)
+        car_wid = CarModelWithUUID(car_id, existing_car)
+        query = mcq_car.update_query(f"car_id = '{car_id}'", list(car_wid.model_dump().keys()))
+        d = existing_car.model_dump()
+        # d.update(car.dump())
+        d.update(car)
+        d = CarModel.model_validate(d)
+        wconn.executemany(
+            query,
+            [mcq_car_wuuid.model2list(d)]
+        )
     # print(car)
-    return d
+        return d
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
 
 @app.post("/car")
 async def add_car(car: CarModel):
-    query = mcq_car.insert_query()
-    wconn.executemany(
-        query,
-        [mcq_car.model2list(car)]
-    )
-    return car
+    try:
+        new_id = uuid.uuid4()
+        # print(type(new_id))
+        query = mcq_car_wuuid.insert_query()
+        uuid_car = CarModelWithUUID(new_id, car)
+        wconn.executemany(
+            query,
+            [mcq_car_wuuid.model2list(uuid_car)]
+        )
+        # car['uuid'] = new_id
+        return uuid_car
+    except Exception as e:
+        print(e)
+        # raise e
+        # return {'error': str(e)}
+        raise HTTPException(status_code=400, detail=str(e))

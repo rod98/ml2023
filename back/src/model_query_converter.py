@@ -1,10 +1,13 @@
+import uuid
+
 from pydantic import BaseModel
 
 class ModelQueryConverter:
     __types = {
-        int   : "integer",
-        float : "float(24)",
-        str   : "text"
+        'int'   : "integer",
+        'float' : "float(24)",
+        'str'   : "text",
+        uuid.UUID  : 'uuid'
     }
 
     def __init__(self, table: str, model) -> None:
@@ -17,6 +20,9 @@ class ModelQueryConverter:
         fs = self.model.model_fields
         for field in fs:
             tp = fs[field].annotation
+            tp_str = str(tp).split('|')[0].strip()
+            print('type string:', tp_str)
+            tp = self.__types.get(tp_str, tp)
             res[field] = self.__types.get(tp, tp)
         
         for field in self.internal_columns:
@@ -109,10 +115,16 @@ class ModelQueryConverter:
         """
         return query
 
-    def model2list(self, object: BaseModel):
-        dump = object.model_dump()
-        dump = [dump[d] for d in dump]
+    def model2list(self, obj: BaseModel):
+        def transform(val):
+            if isinstance(val, uuid.UUID):
+                return val.hex
+            return val
+        dump = obj.model_dump()
+        print('dump:', dump)
+        dump = [transform(dump[d]) for d in dump]
         return dump
+
 
 if __name__ == '__main__':
     class CarModel(BaseModel):
@@ -120,11 +132,11 @@ if __name__ == '__main__':
         make        : str
         model       : str
 
-    car = CarModel({
-        'year' :  1900, 
-        'make' : 'hmmm', 
-        'model': 'Ford T'
-    })
+    car = CarModel(
+        year  =  1900,
+        make  = 'hmmm',
+        model = 'Ford T'
+    )
 
     mcq = ModelQueryConverter('schema1.table1', CarModel)
     mcq.add_internal_columns({
