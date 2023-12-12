@@ -101,7 +101,7 @@ async def search_cars(search_data: dict) -> list[CarModelWithUUID]:
         for search_key in search_data.keys():
             limits = search_data[search_key]
             print(search_key, 'is from', limits[0], 'to', limits[1])
-            conditions.append(f'{limits[0]} <= {search_key} AND {search_key} < {limits[1]}')
+            conditions.append(f'{limits[0]} <= {search_key} AND {search_key} <= {limits[1]}')
 
             conditions = ' AND '.join(conditions)
             query = mcq_car_wuuid.select_query(conditions)
