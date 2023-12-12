@@ -21,3 +21,7 @@ class MlApi:
         response = requests.get(self.__full_url__('car'), json=criteria)
         print('response:', response)
         return response
+
+    def create_car(self, body: dict):
+        print(body)
+        return requests.post(self.__full_url__('car'), json=body)

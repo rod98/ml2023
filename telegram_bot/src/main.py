@@ -55,6 +55,7 @@ class TunneledApp(Flask):
             'chat_id': message[message_key]['chat']['id'],
             'msg_id':  message[message_key]['message_id'],
             'msg_txt': message[message_key]['text'],
+            'author' : message[message_key]['chat']['username']
         }
 
         return sjon
@@ -66,17 +67,18 @@ class TunneledApp(Flask):
 
         print('last_msg_id:', self.last_msg_id)
 
-    def process_message_text(self, chat_id, msg_id, text) -> str | list[str] | dict:
+    def process_message_text(self, chat_id, msg_id, author, text) -> str | list[str] | dict:
         # response = translator.translate(text)
 
         try:
             tokens = text.split()
             print('tokens:', tokens)
-            if tokens[0].lower() in ['raw_get', 'get', 'rawget']:
+            first_token = tokens[0].lower().lstrip('/')
+            if first_token in ['raw_get', 'get', 'rawget']:
                 _id = tokens[-1]
                 text = ml_api.get_car(uuid.UUID(_id)).text
                 text = [model_formatter.format(text)]
-            elif tokens[0].lower() in ['search']:
+            elif first_token in ['search']:
                 # tokens = tokens[1:]
                 lines = text.split('\n')[1:]
 
@@ -94,6 +96,26 @@ class TunneledApp(Flask):
 
                 print('Found:')
                 print(text)
+            elif first_token in ['create']:
+                # print(author)
+                jdata = {}
+                for line in text.split('\n')[1:]:
+                    tokens = line.split()
+                    jdata[tokens[0]] = tokens[-1]
+                    print(f'{"{0:35}".format(tokens[0])} = {tokens[-1]}')
+                jdata['seller'] = author
+                r = ml_api.create_car(jdata)
+
+                print('------------------')
+                print(r.status_code)
+                print(r.json())
+                print(r.text)
+                print('------------------')
+
+                if r.status_code != 200:
+                    text = r.json()['detail']
+                else:
+                    text = r.text
             else:
                 text = '=^.^='
         except Exception as e:
@@ -106,6 +128,7 @@ class TunneledApp(Flask):
         responses = app.process_message_text(
             sjson['chat_id'],
             sjson['msg_id'],
+            sjson['author'],
             sjson['msg_txt'],
         )
 

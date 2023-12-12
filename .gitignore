@@ -5,3 +5,4 @@ __pycache__
 telegram_bot.ini
 .idea/
 .idea
+.env
