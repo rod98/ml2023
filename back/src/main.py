@@ -30,8 +30,8 @@ class CarModel(BaseModel):
 class CarModelWithUUID(CarModel):
     car_id: uuid.UUID
 
-    def __init__(self, uu_id, car):
-        super().__init__(car_id=uu_id, **car.model_dump())
+    def __init__(self, car_id, **kwargs):
+        super().__init__(car_id=car_id, **kwargs)
 
 class EmptyModel(BaseModel):
     pass
@@ -81,12 +81,37 @@ async def get_car(car_id: uuid.UUID) -> CarModel | EmptyModel:
         query = mcq_car_wuuid.select_query(f"car_id = '{car_id}'")
 
         res = wconn.execute_and_fetch_all(query)[0]
+        print('----', res)
         if not res:
             return EmptyModel()
     except Exception as e:
         raise HTTPException(400, detail=str(e))
 
     return CarModel.model_validate(res)
+
+@app.get("/car/{car_id}/price")
+async def get_price_for_car(car_id: uuid.UUID) -> float:
+    raise HTTPException(501)
+
+@app.get("/car")
+async def search_cars(search_data: dict) -> list[CarModelWithUUID]:
+    try:
+        conditions = []
+        cars = []
+        for search_key in search_data.keys():
+            limits = search_data[search_key]
+            print(search_key, 'is from', limits[0], 'to', limits[1])
+            conditions.append(f'{limits[0]} <= {search_key} AND {search_key} < {limits[1]}')
+
+            conditions = ' AND '.join(conditions)
+            query = mcq_car_wuuid.select_query(conditions)
+            res   = wconn.execute_and_fetch_all(query)
+            for r in res:
+                print('----', r)
+                cars.append(CarModelWithUUID.model_validate(r))
+        return cars
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
 
 @app.put("/car/{car_id}")
 async def update_car(car_id: uuid.UUID, car: CarModel) -> CarModel:
@@ -106,7 +131,7 @@ async def update_car(car_id: uuid.UUID, car: CarModel) -> CarModel:
 async def patch_car(car_id: uuid.UUID, car: dict) -> CarModel:
     try:
         existing_car = await get_car(car_id)
-        car_wid = CarModelWithUUID(car_id, existing_car)
+        car_wid = CarModelWithUUID(car_id, **existing_car.model_dump())
         query = mcq_car.update_query(f"car_id = '{car_id}'", list(car_wid.model_dump().keys()))
         d = existing_car.model_dump()
         # d.update(car.dump())
@@ -127,7 +152,7 @@ async def add_car(car: CarModel):
         new_id = uuid.uuid4()
         # print(type(new_id))
         query = mcq_car_wuuid.insert_query()
-        uuid_car = CarModelWithUUID(new_id, car)
+        uuid_car = CarModelWithUUID(new_id, **car.model_dump())
         wconn.executemany(
             query,
             [mcq_car_wuuid.model2list(uuid_car)]
