@@ -1,3 +1,5 @@
+import json
+
 import requests
 import uuid
 
@@ -6,12 +8,16 @@ class MlApi:
         self.url  = url
         self.port = port
 
-    def __full_url__(self, *args):
-        # if isinstance(extra, list):
-        #     extra = '/'.join(extra)
-        # extra = ''
+    def __full_url__(self, *args) -> str:
         extra = '/'.join([str(arg) for arg in args])
         return f'http://{self.url}:{self.port}/{extra}'
 
     def get_car(self, car_id: uuid.UUID):
         return requests.get(self.__full_url__('car', car_id.hex))
+
+    def search_cars(self, criteria: dict):
+        # jc = json.dumps(criteria, indent=4).encode('utf-8')
+        # print('Sending:\n', jc)
+        response = requests.get(self.__full_url__('car'), json=criteria)
+        print('response:', response)
+        return response
