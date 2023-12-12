@@ -2,23 +2,35 @@
 
 import os
 import json
+import uuid
+import requests
+
 from flask import Flask
 from flask import request
 from flask import Response
-import requests
 from pyngrok import ngrok
-import configparser
+from dotenv  import load_dotenv
+
+from api_wrapper import MlApi
+
 # from googletrans import Translator
 
 from telegram_api import SimpleTelegramApi
+from model_formatter import ModelFormatter
 
-config = configparser.ConfigParser()
-config.read('telegram_bot.ini')
+# config = configparser.ConfigParser()
+# config.read('telegram_bot.ini')
+load_dotenv()
 
-telegram_token = config["telegram"]["token"]
+telegram_token = os.getenv("tg_token")
+api_url  = os.getenv('api_url')
+api_port = os.getenv('api_port')
 print('telegram token:', telegram_token)
 
 # translator = Translator()
+ml_api = MlApi(api_url, api_port)
+
+model_formatter = ModelFormatter()
 
 class TunneledApp(Flask):
     def __init__(self, *args, **kwargs):
@@ -56,7 +68,20 @@ class TunneledApp(Flask):
 
     def process_message_text(self, chat_id, msg_id, text):
         # response = translator.translate(text)
-        return ': '.join([str(chat_id), str(msg_id), str(text)])
+
+        try:
+            tokens = text.split()
+            print('tokens:', tokens)
+            if tokens[0].lower() in ['raw_get', 'get', 'rawget']:
+                _id = tokens[-1]
+                text = ml_api.get_car(uuid.UUID(_id)).text
+                text = model_formatter.format(text)
+            else:
+                text = '=^.^='
+        except Exception as e:
+            text = str(e)
+
+        return text
 
     def process_message(self, msg):
         sjson = self.parse_message(msg)
