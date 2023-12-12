@@ -115,7 +115,7 @@ class TunneledApp(Flask):
                 if r.status_code != 200:
                     text = r.json()['detail']
                 else:
-                    text = r.text
+                    text = 'Объявление успешно создано!\nID: <pre>' + json.loads(r.text)["car_id"] + '</pre>'
             else:
                 text = '=^.^='
         except Exception as e:
