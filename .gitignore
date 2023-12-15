@@ -6,3 +6,4 @@ telegram_bot.ini
 .idea/
 .idea
 .env
+./machine_learning/__pycache__
