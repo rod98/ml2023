@@ -6,6 +6,7 @@ import uvicorn
 
 from models import *
 from smart_functions_1 import *
+from smart_functions_2 import *
 
 API_PORT: int = 8001
 
@@ -85,6 +86,43 @@ async def forecast_car_price(data: CarModelList, index: int) -> int:
     car_history = generate_history_for_car(data_converted, dict_history, index, 10.0)
 
     return forecast(car_history)
+
+
+@app.get('/important_characteristics')
+async def important_characteristics(data: CarModelList) -> List[str]:
+
+    data_converted = pd.DataFrame([vars(el) for el in data.data])
+
+    prepared_data = prepare_data(data_converted)
+
+    _, important = important_features(prepared_data)
+
+    return important
+
+@app.get('/real_price/{index}')
+async def real_price_indx(data: CarModelList, index: int) -> float:
+
+    data_converted = pd.DataFrame([vars(el) for el in data.data])
+
+    prepared_data = prepare_data(data_converted)
+
+    weights, _ = important_features(prepared_data)
+
+    price = calculate_fair_price_indx(prepared_data, weights, index)
+
+    return price
+
+
+@app.get('/write_advertisement/{index}')
+async def advertisement_indx(data: CarModelList, index: int, price: float = 20000) -> str:
+
+    data_converted = pd.DataFrame([vars(el) for el in data.data])
+
+    prepared_data = prepare_data(data_converted)
+
+    res = write_advertisement_indx(prepared_data, index, price)
+
+    return res
 
 
 if __name__ == "__main__":
