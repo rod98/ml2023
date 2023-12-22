@@ -6,26 +6,36 @@ from model_query_converter import ModelQueryConverter
 import uuid
 import os
 
+from typing import List
+
+import machine_learning.main as mlearn
+# from machine_learning.models import CarModel     as TrainingCarModel
+# from machine_learning.models import CarModelList as TrainingCarModelList
+
 print('Staring in folder:', os.getcwd())
 
 load_dotenv()
 
 class CarModel(BaseModel):
-    year        : int   | None
-    make        : str   | None
-    model       : str   | None
-    trim        : str   | None
-    body        : str   | None
-    transmission: str   | None
-    vin         : str   | None
-    state       : float | None
-    condition   : str   | None
-    odometer    : str   | None
-    color       : str   | None
-    interior    : str   | None
-    seller      : str   | None
-    mmr         : str   | None
-    sellingprice: int   | None
+    year        : int
+    make        : str
+    model       : str
+    trim        : str
+    body        : str
+    transmission: str
+    vin         : str
+    state       : str
+    condition   : float
+    odometer    : float
+    color       : str
+    interior    : str
+    seller      : str
+    mmr         : int
+    sellingprice: int
+    saledate    : str
+
+class CarModelList(BaseModel):
+    data: List[CarModel]
 
 class CarModelWithUUID(CarModel):
     car_id: uuid.UUID
@@ -98,17 +108,26 @@ async def search_cars(search_data: dict) -> list[CarModelWithUUID]:
     try:
         conditions = []
         cars = []
+        train_cars = []
         for search_key in search_data.keys():
             limits = search_data[search_key]
             print(search_key, 'is from', limits[0], 'to', limits[1])
             conditions.append(f'{limits[0]} <= {search_key} AND {search_key} <= {limits[1]}')
 
-            conditions = ' AND '.join(conditions)
-            query = mcq_car_wuuid.select_query(conditions)
-            res   = wconn.execute_and_fetch_all(query)
-            for r in res:
-                print('----', r)
-                cars.append(CarModelWithUUID.model_validate(r))
+        conditions = ' AND '.join(conditions)
+        query = mcq_car_wuuid.select_query(conditions)
+        res   = wconn.execute_and_fetch_all(query)
+        for r in res:
+            # raw
+            print('----', r)
+            cars.append(CarModelWithUUID.model_validate(r))
+            train_cars.append(CarModel.model_validate(r))
+
+        car_list = CarModelList(data=train_cars)
+        r = await mlearn.real_price_indx(car_list, 0)
+        print('Recommended price:')
+        print(r)
+
         return cars
     except Exception as e:
         raise HTTPException(400, detail=str(e))
