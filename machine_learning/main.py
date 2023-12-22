@@ -4,9 +4,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
 
-from models import *
-from smart_functions_1 import *
-from smart_functions_2 import *
+from .models import *
+from .smart_functions_1 import *
+from .smart_functions_2 import *
 
 API_PORT: int = 8001
 
