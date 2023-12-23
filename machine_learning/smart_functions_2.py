@@ -21,12 +21,13 @@ def add_column_to_dataframe(input_data):
 def prepare_data2(input_data):
     data = input_data.copy()
 
-    data = add_column_to_dataframe(data)
+    #data = add_column_to_dataframe(data)
 
     data.reset_index(drop=True, inplace=True)
     data = data.dropna(subset=['sellingprice'])
 
-    columns_to_drop = ['vin', 'saledate', 'state', 'announcement']
+    #columns_to_drop = ['vin', 'saledate', 'state', 'announcement']
+    columns_to_drop = ['vin', 'saledate', 'state']
     for col in columns_to_drop:
         data.drop(col, axis=1, inplace=True)
 
@@ -98,9 +99,10 @@ def predict_car_price(prepared_data, label_encoder, car_info):
     car_info_encoded = []
     for info in car_info.keys():
         if info in label_encoder.keys():
-            car_info_encoded.append(label_encoder[info].transform([car_info[info]])[0])
+            car_info_encoded.append(label_encoder[info].fit_transform([car_info[info]])[0])
         else:
-            car_info_encoded.append(car_info[info])
+            if (info != 'vin' and info != 'saledate' and info != 'state' and info != 'sellingprice' and info != 'mmr'):
+                car_info_encoded.append(car_info[info])
 
     car_info_encoded = pd.DataFrame([car_info_encoded], columns=x.columns)
     predicted_price = model.predict(car_info_encoded)

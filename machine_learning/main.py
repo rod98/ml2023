@@ -104,10 +104,17 @@ async def real_price_indx(data: CarModelList, index: int) -> float:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
-    prepared_data = prepare_data(data_converted)
-    weights, _ = important_features(prepared_data)
+    column = data_converted.columns.values
 
-    price = calculate_fair_price_indx(prepared_data, weights, index)
+    car_info = dict()
+    for i in column:
+        car_info[i] = data_converted.iloc[[index]][i].values[0]
+        
+    data_converted.drop(index, axis=0, inplace=True)
+
+    prepared_data, label_encoder = prepare_data2(data_converted)
+
+    price = predict_car_price(prepared_data, label_encoder, car_info)
 
     return price
 
