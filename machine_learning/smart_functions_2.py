@@ -80,8 +80,9 @@ def important_features(prepared_data):
     #plt.title('Top 10 Important Features for Car Price Prediction')
     #plt.gca().invert_yaxis()
     #plt.show()
+    res = dict(map(lambda i, j : (i, j), top_features['Feature'], top_features['Importance']))    
 
-    return importance, top_features['Feature']
+    return importance, res
 
 
 def predict_car_price(prepared_data, label_encoder, car_info):
@@ -153,7 +154,7 @@ def write_advertisement_indx(prepared_data, indx, price):
     car_info_str = ", ".join(i + ": " + str(prepared_data.iloc[[indx]][i].values[0]) for i in column)
     car_info_str = car_info_str + ", price:" + str(price)
 
-    with GigaChat(credentials='YjMyZDdhZTctMmQ5MC00ZmRiLWI4ODktNWQ0M2Y1OWM1ZjdiOjU5YWM3NmYxLTg0NWQtNDZiMy1iM2U5LTRiMzc0MzY1YWVhZg==',
+    with GigaChat(credentials='YjMyZDdhZTctMmQ5MC00ZmRiLWI4ODktNWQ0M2Y1OWM1ZjdiOmQwZDRkZjhlLTRiMzgtNDhiNC04NzgyLWIwNDNkOTI4NDA0Nw==',
                   verify_ssl_certs=False) as giga:
         querty_text = "Составь текст объявления о продаже авто, используя следующие данные об авто: " + car_info_str
         response = giga.chat(querty_text)

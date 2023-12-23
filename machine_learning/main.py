@@ -89,7 +89,7 @@ async def forecast_car_price(data: CarModelList, index: int) -> int:
 
 
 @app.get('/important_characteristics')
-async def important_characteristics(data: CarModelList) -> List[str]:
+async def important_characteristics(data: CarModelList) -> Dict[str, float]:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
@@ -125,7 +125,7 @@ async def real_price_indx(data: CarModelList, index: int) -> float:
 #    return price
 
 @app.get('/write_advertisement/{index}')
-async def advertisement_indx(data: CarModelList, index: int, price: int = 20000) -> str:
+async def advertisement_indx(data: CarModelList, index: int, price: float = 20000.0) -> str:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
