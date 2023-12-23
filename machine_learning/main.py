@@ -105,22 +105,31 @@ async def real_price_indx(data: CarModelList, index: int) -> float:
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
     prepared_data = prepare_data(data_converted)
-
     weights, _ = important_features(prepared_data)
 
     price = calculate_fair_price_indx(prepared_data, weights, index)
 
     return price
 
+#@app.get('/real_price/')
+#async def real_price_indx(data: CarModelList, my_car: CarModelList) -> float:
+#
+#    data_converted = pd.DataFrame([vars(el) for el in data.data])
+#    car_info = pd.DataFrame([vars(el) for el in my_car.data])
+#
+#    prepared_data, label_encoder = prepare_data2(data_converted)
+#    weights, _ = important_features(prepared_data)
+#
+#    price = calculate_fair_price_indx(label_encoder, weights, car_info)
+#
+#    return price
 
 @app.get('/write_advertisement/{index}')
-async def advertisement_indx(data: CarModelList, index: int, price: float = 20000) -> str:
+async def advertisement_indx(data: CarModelList, index: int, price: int = 20000) -> str:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
-    prepared_data = prepare_data(data_converted)
-
-    res = write_advertisement_indx(prepared_data, index, price)
+    res = write_advertisement_indx(data_converted, index, price)
 
     return res
 
