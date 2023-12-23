@@ -86,15 +86,22 @@ async def init_db():
     return {"message": "DB initialization"}
 
 async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
+    dcars = []
     for ucar in ucars:
         data = []
 
         # car = ucar.model_dump()
-        # dcar = CarModelWithData(**ucar.model_dump())
+        dcar = CarModelWithData(**ucar.model_dump())
+
         res = smart_api.real_price_indx(data, ucar)
         print(res)
+        res = smart_api.get_car_history_by_id(ucar)
+        print(res)
+        dcar.extra_data['history'] = res
 
-    return ucars
+        dcars.append(dcar)
+
+    return dcars
 
 @app.get("/car/{car_id}")
 async def get_car(car_id: uuid.UUID) -> CarModel | EmptyModel:
@@ -131,7 +138,8 @@ async def search_cars(search_data: dict) -> list[CarModelWithData]:
         for r in res:
             # raw
             print('----', r)
-            cars.append(CarModelWithData.model_validate(r))
+            # cars.append(CarModelWithData.model_validate(r))
+            cars.append(CarModelWithUUID.model_validate(r))
             # train_cars.append(CarModel.model_validate(r))
 
         # car_list = CarModelList(data=train_cars)

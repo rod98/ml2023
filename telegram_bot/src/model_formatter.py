@@ -46,7 +46,7 @@ class ModelFormatter:
                 res.append(f'{key_text} {data_text}')
 
         res = '\n'.join(res)
-        res = '<pre>' + res + '</pre>\n'
+        res = '<pre>' + res[0:4000] + '</pre>\n'
 
         res += self.__translate__('seller') + ': ' + '@' + data['seller']
 

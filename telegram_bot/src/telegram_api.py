@@ -11,15 +11,23 @@ class SimpleTelegramApi:
 
     def send_message(self, chat_id, text):
         url = f'https://api.telegram.org/bot{self.api_token}/sendMessage'
-        payload = {
-            'chat_id': chat_id,
-            'text'   : text,
-            'parse_mode': 'html'
-        }
 
-        r = requests.post(url, json=payload).json()
+        msg_size_limit = 4096
 
-        return r
+        results = []
+
+        for i in range(0, len(text), msg_size_limit):
+            sub_msg = text[i:i + msg_size_limit]
+            payload = {
+                'chat_id': chat_id,
+                'text'   : sub_msg,
+                'parse_mode': 'html'
+            }
+
+            r = requests.post(url, json=payload).json()
+            results.append(r)
+
+        return results[0]
 
     def edit_message(self, chat_id, msg_id, text):
         url = f"https://api.telegram.org/bot{self.api_token}/editMessageText" #?chat_id={chat_id}&message_id={msg_id}"

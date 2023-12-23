@@ -79,7 +79,8 @@ class TunneledApp(Flask):
         r = self.telapi.send_message(chat_id, text)
         if r.get('ok'):
             self.last_msg_id = r['result']['message_id']
-
+        else:
+            raise Exception(str(r))
         # print('last_msg_id:', self.last_msg_id)
 
     def process_message_text(self, chat_id, msg_id, author, text) -> str | list[str] | dict:
@@ -115,7 +116,7 @@ class TunneledApp(Flask):
                     text = text[0:limit]
                     text.append('Найдено слишком много машин! Уточните запрос!')
 
-                text = '\n\n\n'.join(text)
+                # text = '\n\n\n'.join(text)
 
                 # print('Found:')
                 # print(text)
