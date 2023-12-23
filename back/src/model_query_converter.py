@@ -7,6 +7,9 @@ class ModelQueryConverter:
         'int'   : "integer",
         'float' : "float(24)",
         'str'   : "text",
+        int     : "integer",
+        float   : "float(24)",
+        str     : "text",
         uuid.UUID  : 'uuid'
     }
 
@@ -20,9 +23,11 @@ class ModelQueryConverter:
         fs = self.model.model_fields
         for field in fs:
             tp = fs[field].annotation
-            tp_str = str(tp).split('|')[0].strip()
-            print('type string:', tp_str)
-            tp = self.__types.get(tp_str, tp)
+            if isinstance(tp, str):
+                tp_str = str(tp).split('|')[0].strip()
+                print('type string:', tp_str)
+                tp = self.__types.get(tp_str, tp)
+
             res[field] = self.__types.get(tp, tp)
         
         for field in self.internal_columns:
