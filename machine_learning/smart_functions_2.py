@@ -21,12 +21,13 @@ def add_column_to_dataframe(input_data):
 def prepare_data2(input_data):
     data = input_data.copy()
 
-    data = add_column_to_dataframe(data)
+    #data = add_column_to_dataframe(data)
 
     data.reset_index(drop=True, inplace=True)
     data = data.dropna(subset=['sellingprice'])
 
-    columns_to_drop = ['vin', 'saledate', 'state', 'announcement']
+    #columns_to_drop = ['vin', 'saledate', 'state', 'announcement']
+    columns_to_drop = ['vin', 'saledate', 'state']
     for col in columns_to_drop:
         data.drop(col, axis=1, inplace=True)
 
@@ -50,7 +51,7 @@ def prepare_data2(input_data):
 
     res_data = pd.DataFrame(data, index=data.index, columns=data.columns)
     res_data['sellingprice'] = selling_price
-    return res_data
+    return res_data, label_encoder
 
 
 def important_features(prepared_data):
@@ -74,14 +75,15 @@ def important_features(prepared_data):
     # Топ 10
     top_features = importance_df.head(10)
 
-    plt.figure(figsize=(10, 6))
-    plt.barh(top_features['Feature'], top_features['Importance'], color='skyblue')
-    plt.xlabel('Importance')
-    plt.title('Top 10 Important Features for Car Price Prediction')
-    plt.gca().invert_yaxis()
-    plt.show()
+    #plt.figure(figsize=(10, 6))
+    #plt.barh(top_features['Feature'], top_features['Importance'], color='skyblue')
+    #plt.xlabel('Importance')
+    #plt.title('Top 10 Important Features for Car Price Prediction')
+    #plt.gca().invert_yaxis()
+    #plt.show()
+    res = dict(map(lambda i, j : (i, j), top_features['Feature'], top_features['Importance']))    
 
-    return importance, top_features['Feature']
+    return importance, res
 
 
 def predict_car_price(prepared_data, label_encoder, car_info):
@@ -97,9 +99,10 @@ def predict_car_price(prepared_data, label_encoder, car_info):
     car_info_encoded = []
     for info in car_info.keys():
         if info in label_encoder.keys():
-            car_info_encoded.append(label_encoder[info].transform([car_info[info]])[0])
+            car_info_encoded.append(label_encoder[info].fit_transform([car_info[info]])[0])
         else:
-            car_info_encoded.append(car_info[info])
+            if (info != 'vin' and info != 'saledate' and info != 'state' and info != 'sellingprice' and info != 'mmr'):
+                car_info_encoded.append(car_info[info])
 
     car_info_encoded = pd.DataFrame([car_info_encoded], columns=x.columns)
     predicted_price = model.predict(car_info_encoded)
@@ -108,24 +111,30 @@ def predict_car_price(prepared_data, label_encoder, car_info):
 
 
 def calculate_fair_price(label_encoder, weights, car_info):
+    column = car_info.columns.values
     car_info_encoded = []
-    for info in car_info.keys():
+    for info in column:
         if info in label_encoder.keys():
-            car_info_encoded.append(label_encoder[info].transform([car_info[info]])[0])
+            car_info_encoded.append(label_encoder[info].transform(car_info.iloc[[0]][info].values[0]))
         else:
-            car_info_encoded.append(car_info[info])
+            car_info_encoded.append(car_info.iloc[[0]][info].values[0])
     fair_price = 0
     for i in range(len(car_info)):
+        if (weights['Importance'][i] == 0.0):
+            weights['Importance'][i] = 0.001
         fair_price += car_info_encoded[i] / weights['Importance'][i]
-    return fair_price / 100 * 4
+    fair_price = fair_price / 100 * 4
+    return fair_price
 
 
 def calculate_fair_price_indx(data, weights, indx):
     fair_price = 0
     for i in range(len(weights['Feature'])):
-        print(weights['Feature'][i])
+        if (weights['Importance'][i] == 0.0):
+            weights['Importance'][i] = 0.001
         fair_price += data.iloc[[indx]][weights['Feature'][i]] / weights['Importance'][i]
-    return fair_price / 100 * 4
+    fair_price = fair_price / 100 * 4
+    return fair_price
 
 
 def write_advertisement(car_info, price):
@@ -141,11 +150,13 @@ def write_advertisement(car_info, price):
 
 
 def write_advertisement_indx(prepared_data, indx, price):
+    columns_to_drop = ['sellingprice', 'mmr']
+    prepared_data = prepared_data.drop(columns=columns_to_drop)
     column = prepared_data.columns.values
-    car_info_str = ", ".join(i + ": " + str(prepared_data.iloc[[indx]][i]) for i in column)
+    car_info_str = ", ".join(i + ": " + str(prepared_data.iloc[[indx]][i].values[0]) for i in column)
     car_info_str = car_info_str + ", price:" + str(price)
 
-    with GigaChat(credentials='',
+    with GigaChat(credentials='YjMyZDdhZTctMmQ5MC00ZmRiLWI4ODktNWQ0M2Y1OWM1ZjdiOmQwZDRkZjhlLTRiMzgtNDhiNC04NzgyLWIwNDNkOTI4NDA0Nw==',
                   verify_ssl_certs=False) as giga:
         querty_text = "Составь текст объявления о продаже авто, используя следующие данные об авто: " + car_info_str
         response = giga.chat(querty_text)

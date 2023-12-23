@@ -89,7 +89,7 @@ async def forecast_car_price(data: CarModelList, index: int) -> int:
 
 
 @app.get('/important_characteristics')
-async def important_characteristics(data: CarModelList) -> List[str]:
+async def important_characteristics(data: CarModelList) -> Dict[str, float]:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
@@ -104,23 +104,39 @@ async def real_price_indx(data: CarModelList, index: int) -> float:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
-    prepared_data = prepare_data(data_converted)
+    column = data_converted.columns.values
 
-    weights, _ = important_features(prepared_data)
+    car_info = dict()
+    for i in column:
+        car_info[i] = data_converted.iloc[[index]][i].values[0]
+        
+    data_converted.drop(index, axis=0, inplace=True)
 
-    price = calculate_fair_price_indx(prepared_data, weights, index)
+    prepared_data, label_encoder = prepare_data2(data_converted)
+
+    price = predict_car_price(prepared_data, label_encoder, car_info)
 
     return price
 
+#@app.get('/real_price/')
+#async def real_price_indx(data: CarModelList, my_car: CarModelList) -> float:
+#
+#    data_converted = pd.DataFrame([vars(el) for el in data.data])
+#    car_info = pd.DataFrame([vars(el) for el in my_car.data])
+#
+#    prepared_data, label_encoder = prepare_data2(data_converted)
+#    weights, _ = important_features(prepared_data)
+#
+#    price = calculate_fair_price_indx(label_encoder, weights, car_info)
+#
+#    return price
 
 @app.get('/write_advertisement/{index}')
-async def advertisement_indx(data: CarModelList, index: int, price: float = 20000) -> str:
+async def advertisement_indx(data: CarModelList, index: int, price: float = 20000.0) -> str:
 
     data_converted = pd.DataFrame([vars(el) for el in data.data])
 
-    prepared_data = prepare_data(data_converted)
-
-    res = write_advertisement_indx(prepared_data, index, price)
+    res = write_advertisement_indx(data_converted, index, price)
 
     return res
 
