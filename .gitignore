@@ -1,11 +1,11 @@
 pyenv
 pyenv/
-__pychache__
 __pycache__
+__pycache__/
 telegram_bot.ini
 .idea/
 .idea
 .env
 venv
 venv/
-./machine_learning/__pycache__
+ngrok.yml
