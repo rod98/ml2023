@@ -1,3 +1,4 @@
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from typing import Hashable, Optional, List
 from fastapi import FastAPI
@@ -12,6 +13,8 @@ API_PORT: int = 8001
 
 app = FastAPI()
 
+global_data: CarModelList = None
+global_data_converted: pd.DataFrame = None
 
 @app.get("/")
 async def root():
@@ -20,9 +23,19 @@ async def root():
     """
     return {"message": "Hello machine learning"}
 
+@app.post("/init_data")
+async def init_data(data: CarModelList):
+    global global_data
+    global global_data_converted
+
+    global_data.data = data.data
+    global_data_converted = pd.DataFrame([vars(el) for el in global_data.data])
+
+    return {"message": "Hello machine learning"}
+
 
 @app.get('/show_similar_profitable/{index}')
-async def show_similar_profitable_by_id(data: CarModelList, index: int, count: int = 5) -> List[CarModel]:
+async def show_similar_profitable_by_id(index: int, count: int = 5) -> List[CarModel]:
     """
     show_similar_profitable shows similar and more profitable cars
 
@@ -32,7 +45,7 @@ async def show_similar_profitable_by_id(data: CarModelList, index: int, count: i
     :return: (by default) five similar and more profitable cars
     """
     # convert from list to DataFrame
-    data_converted = pd.DataFrame([vars(el) for el in data.data])
+    data_converted = global_data_converted
 
     if index < 0 or index >= data_converted.shape[0]:
         raise HTTPException(status_code=422, detail="not valid index")
@@ -47,7 +60,7 @@ async def show_similar_profitable_by_id(data: CarModelList, index: int, count: i
 
 
 @app.get('/car_history/{index}')
-async def get_car_history_by_id(data: CarModelList, index: int) -> List[int]:
+async def get_car_history_by_id(index: int) -> List[int]:
     """
     get_car_history_by_id returns price history of car by id
 
@@ -56,7 +69,7 @@ async def get_car_history_by_id(data: CarModelList, index: int) -> List[int]:
     :return: list (200 elements) of price history
     """
     # convert from list to DataFrame
-    data_converted = pd.DataFrame([vars(el) for el in data.data])
+    data_converted = global_data_converted
 
     if index < 0 or index >= data_converted.shape[0]:
         raise HTTPException(status_code=422, detail="not valid index")
@@ -68,7 +81,7 @@ async def get_car_history_by_id(data: CarModelList, index: int) -> List[int]:
 
 
 @app.get('/forecast_car_price/{index}')
-async def forecast_car_price(data: CarModelList, index: int) -> int:
+async def forecast_car_price(index: int) -> int:
     """
     forecast_car_price forecsats a car price in the next month
 
@@ -77,7 +90,7 @@ async def forecast_car_price(data: CarModelList, index: int) -> int:
     :return: a car price in the next month
     """
     # convert from list to DataFrame
-    data_converted = pd.DataFrame([vars(el) for el in data.data])
+    data_converted = global_data_converted
 
     if index < 0 or index >= data_converted.shape[0]:
         raise HTTPException(status_code=422, detail="not valid index")
@@ -91,7 +104,7 @@ async def forecast_car_price(data: CarModelList, index: int) -> int:
 @app.get('/important_characteristics')
 async def important_characteristics(data: CarModelList) -> Dict[str, float]:
 
-    data_converted = pd.DataFrame([vars(el) for el in data.data])
+    data_converted = global_data_converted
 
     prepared_data = prepare_data(data_converted)
 
@@ -100,9 +113,9 @@ async def important_characteristics(data: CarModelList) -> Dict[str, float]:
     return important
 
 @app.get('/real_price/{index}')
-async def real_price_indx(data: CarModelList, index: int) -> float:
+async def real_price_indx(index: int) -> float:
 
-    data_converted = pd.DataFrame([vars(el) for el in data.data])
+    data_converted = global_data_converted
 
     column = data_converted.columns.values
 
@@ -119,9 +132,9 @@ async def real_price_indx(data: CarModelList, index: int) -> float:
     return price
 
 #@app.get('/real_price/')
-#async def real_price_indx(data: CarModelList, my_car: CarModelList) -> float:
+#async def real_price_indx(my_car: CarModelList) -> float:
 #
-#    data_converted = pd.DataFrame([vars(el) for el in data.data])
+#    data_converted = global_data_converted
 #    car_info = pd.DataFrame([vars(el) for el in my_car.data])
 #
 #    prepared_data, label_encoder = prepare_data2(data_converted)
@@ -132,9 +145,9 @@ async def real_price_indx(data: CarModelList, index: int) -> float:
 #    return price
 
 @app.get('/write_advertisement/{index}')
-async def advertisement_indx(data: CarModelList, index: int, price: float = 20000.0) -> str:
+async def advertisement_indx(index: int, price: float = 20000.0) -> str:
 
-    data_converted = pd.DataFrame([vars(el) for el in data.data])
+    data_converted = global_data_converted
 
     res = write_advertisement_indx(data_converted, index, price)
 

@@ -110,7 +110,7 @@ class TunneledApp(Flask):
                 texts = json.loads(ml_api.search_cars(criteria).text)
                 text  = [model_formatter.format(text) for text in texts]
 
-                limit = 3
+                limit = 10
 
                 if len(text) > limit:
                     text = text[0:limit]

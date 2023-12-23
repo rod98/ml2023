@@ -87,7 +87,7 @@ async def init_db():
 
 async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
     dcars = []
-    for ucar in ucars:
+    for ucar in ucars[0:100]:
         data = []
 
         # car = ucar.model_dump()
@@ -96,7 +96,7 @@ async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
         res = smart_api.real_price_indx(data, ucar)
         print(res)
         res = smart_api.get_car_history_by_id(ucar)
-        print(res)
+        # print(res)
         dcar.extra_data['history'] = res
 
         dcars.append(dcar)
