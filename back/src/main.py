@@ -1,14 +1,14 @@
 from fastapi  import FastAPI, HTTPException
-from pydantic import BaseModel
 from dotenv   import load_dotenv
 from wrapped_connection    import WrappedConnection
+from ml_smart_api_wrapper  import MlSmartApi
 from model_query_converter import ModelQueryConverter
 import uuid
 import os
+import csv
+import glob
 
-from typing import List
-
-import machine_learning.main as mlearn
+# import machine_learning.main as mlearn
 # from machine_learning.models import CarModel     as TrainingCarModel
 # from machine_learning.models import CarModelList as TrainingCarModelList
 
@@ -16,36 +16,10 @@ print('Staring in folder:', os.getcwd())
 
 load_dotenv()
 
-class CarModel(BaseModel):
-    year        : int
-    make        : str
-    model       : str
-    trim        : str
-    body        : str
-    transmission: str
-    vin         : str
-    state       : str
-    condition   : float
-    odometer    : float
-    color       : str
-    interior    : str
-    seller      : str
-    mmr         : int
-    sellingprice: int
-    saledate    : str
+from models import *
 
-class CarModelList(BaseModel):
-    data: List[CarModel]
 
-class CarModelWithUUID(CarModel):
-    car_id: uuid.UUID
-
-    def __init__(self, car_id, **kwargs):
-        super().__init__(car_id=car_id, **kwargs)
-
-class EmptyModel(BaseModel):
-    pass
-
+smart_api = MlSmartApi(os.getenv('smart_host'), os.getenv('smart_port'))
 
 mcq_car      : ModelQueryConverter = ModelQueryConverter('car_schema.car_table', CarModel)
 mcq_car_wuuid: ModelQueryConverter = ModelQueryConverter('car_schema.car_table', CarModelWithUUID)
@@ -83,7 +57,44 @@ async def init_db():
     #     wconn.executemany(create_query)
     # except Exception as e:
     #     logs.append(e)
+
+    data_filename_list = glob.glob('data/car_prices*.csv')
+    for csv_filename in data_filename_list:
+        car_list = []
+        with open(csv_filename, 'r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
+                try:
+                    car = CarModel(**row)
+                    new_id = uuid.uuid4()
+                    uuid_car = CarModelWithUUID(new_id, **car.model_dump())
+                    car_list.append(mcq_car_wuuid.model2list(uuid_car))
+                    # wconn.
+                except Exception as e:
+                    print(e)
+                    print(row)
+
+        new_id = uuid.uuid4()
+        # print(type(new_id))
+        query = mcq_car_wuuid.insert_query()
+
+        wconn.executemany(
+            query,
+            car_list
+        )
+
     return {"message": "DB initialization"}
+
+async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
+    for ucar in ucars:
+        data = []
+
+        # car = ucar.model_dump()
+        # dcar = CarModelWithData(**ucar.model_dump())
+        res = smart_api.real_price_indx(data, ucar)
+        print(res)
+
+    return ucars
 
 @app.get("/car/{car_id}")
 async def get_car(car_id: uuid.UUID) -> CarModel | EmptyModel:
@@ -104,7 +115,7 @@ async def get_price_for_car(car_id: uuid.UUID) -> float:
     raise HTTPException(501)
 
 @app.get("/car")
-async def search_cars(search_data: dict) -> list[CarModelWithUUID]:
+async def search_cars(search_data: dict) -> list[CarModelWithData]:
     try:
         conditions = []
         cars = []
@@ -120,20 +131,23 @@ async def search_cars(search_data: dict) -> list[CarModelWithUUID]:
         for r in res:
             # raw
             print('----', r)
-            cars.append(CarModelWithUUID.model_validate(r))
-            train_cars.append(CarModel.model_validate(r))
+            cars.append(CarModelWithData.model_validate(r))
+            # train_cars.append(CarModel.model_validate(r))
 
-        car_list = CarModelList(data=train_cars)
-        r = await mlearn.real_price_indx(car_list, 0)
-        print('Recommended price:')
-        print(r)
+        # car_list = CarModelList(data=train_cars)
+        # for idx in range(len(cars)):
+        #     r = await mlearn.real_price_indx(car_list, 0)
+        #     print('Recommended price:')
+        #     print(r)
+        #     cars[idx].extra_data['recommended_price'] = r
+        return await smart_data_add(*cars)
 
-        return cars
+        # return cars
     except Exception as e:
         raise HTTPException(400, detail=str(e))
 
 @app.put("/car/{car_id}")
-async def update_car(car_id: uuid.UUID, car: CarModel) -> CarModel:
+async def update_car(car_id: uuid.UUID, car: CarModel) -> CarModelWithData:
     # car = await get_car(car_id)
     try:
         query = mcq_car.update_query(f"car_id = '{car_id}'")
@@ -144,10 +158,10 @@ async def update_car(car_id: uuid.UUID, car: CarModel) -> CarModel:
     except Exception as e:
         raise HTTPException(400, detail=str(e))
     # print(car)
-    return CarModel.model_validate(car)
+    return CarModelWithData.model_validate(car)
 
 @app.patch("/car/{car_id}")
-async def patch_car(car_id: uuid.UUID, car: dict) -> CarModel:
+async def patch_car(car_id: uuid.UUID, car: dict) -> CarModelWithData:
     try:
         existing_car = await get_car(car_id)
         car_wid = CarModelWithUUID(car_id, **existing_car.model_dump())
@@ -155,7 +169,7 @@ async def patch_car(car_id: uuid.UUID, car: dict) -> CarModel:
         d = existing_car.model_dump()
         # d.update(car.dump())
         d.update(car)
-        d = CarModel.model_validate(d)
+        d = CarModelWithData.model_validate(d)
         wconn.executemany(
             query,
             [mcq_car_wuuid.model2list(d)]
@@ -166,18 +180,23 @@ async def patch_car(car_id: uuid.UUID, car: dict) -> CarModel:
         raise HTTPException(400, detail=str(e))
 
 @app.post("/car")
-async def add_car(car: CarModel):
+async def add_car(car: CarModel) -> CarModelWithData:
     try:
         new_id = uuid.uuid4()
         # print(type(new_id))
         query = mcq_car_wuuid.insert_query()
         uuid_car = CarModelWithUUID(new_id, **car.model_dump())
+
         wconn.executemany(
             query,
             [mcq_car_wuuid.model2list(uuid_car)]
         )
         # car['uuid'] = new_id
-        return uuid_car
+
+        # data_car = CarModelWithData(**uuid_car.model_dump())
+        data_car = await smart_data_add(uuid_car)
+
+        return data_car[0]
     except Exception as e:
         print(e)
         # raise e

@@ -3,15 +3,9 @@ import json
 import requests
 import uuid
 
-class MlApi:
-    def __init__(self, url, port):
-        self.url  = url
-        self.port = port
+from base_api_wrapper import BaseApi
 
-    def __full_url__(self, *args) -> str:
-        extra = '/'.join([str(arg) for arg in args])
-        return f'http://{self.url}:{self.port}/{extra}'
-
+class MlApi(BaseApi):
     def get_car(self, car_id: uuid.UUID):
         return requests.get(self.__full_url__('car', car_id.hex))
 

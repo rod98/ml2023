@@ -8,7 +8,7 @@ import requests
 from flask import Flask
 from flask import request
 from flask import Response
-from pyngrok import ngrok
+from pyngrok import ngrok, conf
 from dotenv  import load_dotenv
 
 from ml_api_wrapper import MlApi
@@ -39,10 +39,25 @@ class TunneledApp(Flask):
         self.last_msg_id = None
         self.telapi = SimpleTelegramApi(telegram_token)
 
+        # conf.get_default().config_path = "/opt/ngrok/config.yml"
+
         self.http_tunnel = ngrok.connect('5000', "http")
         self.telapi.setup_webhook(self.http_tunnel.public_url)
         print('Ngrok url:', self.http_tunnel.public_url)
         print()
+
+        commands = [
+            {
+                'command'    : "search",
+                'description': "Поиск машины по заданным параметрам.\nФормат: название_критерия минимум максимум"
+            },
+            {
+                'command'    : "create",
+                'description': "Создать новое объявление о продаже машины"
+            }
+        ]
+        r = self.telapi.set_commands(commands)
+        print('Command setting status:', r)
 
     def parse_message(self, message):
         print("message -->", json.dumps(message, indent=4, ensure_ascii=False))
@@ -65,7 +80,7 @@ class TunneledApp(Flask):
         if r.get('ok'):
             self.last_msg_id = r['result']['message_id']
 
-        print('last_msg_id:', self.last_msg_id)
+        # print('last_msg_id:', self.last_msg_id)
 
     def process_message_text(self, chat_id, msg_id, author, text) -> str | list[str] | dict:
         # response = translator.translate(text)
@@ -94,8 +109,16 @@ class TunneledApp(Flask):
                 texts = json.loads(ml_api.search_cars(criteria).text)
                 text  = [model_formatter.format(text) for text in texts]
 
-                print('Found:')
-                print(text)
+                limit = 3
+
+                if len(text) > limit:
+                    text = text[0:limit]
+                    text.append('Найдено слишком много машин! Уточните запрос!')
+
+                text = '\n\n\n'.join(text)
+
+                # print('Found:')
+                # print(text)
             elif first_token in ['create']:
                 # print(author)
                 jdata = {}
@@ -136,6 +159,8 @@ class TunneledApp(Flask):
             responses = [responses]
 
         for resp in responses:
+            sr = str(str(resp).encode('UTF-8'))
+            print('response:', sr[0:77] + '...' if len(sr) > 80 else sr)
             self.tel_send_message(sjson['chat_id'], resp)
 
 def create_app():

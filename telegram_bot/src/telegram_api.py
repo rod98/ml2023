@@ -35,3 +35,11 @@ class SimpleTelegramApi:
         url = f"https://api.telegram.org/bot{self.api_token}/deleteMessage?chat_id={chat_id}&message_id={msg_id}"
         r = requests.post(url).json()
         return r
+
+    def set_commands(self, commands: list):
+        url = f"https://api.telegram.org/bot{self.api_token}/setMyCommands"
+        payload = {
+            'commands': commands
+        }
+        r = requests.post(url, json=payload).json()
+        return r
