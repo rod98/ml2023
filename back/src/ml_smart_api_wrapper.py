@@ -20,7 +20,12 @@ class MlSmartApi(BaseApi):
         payload = {
             'data': [data.model_dump(exclude={'car_id'}) for data in all_data]
         }
-        requests.post(self.__full_url__('init_data'), json=payload)
+        r = requests.post(self.__full_url__('init_data'), json=payload)
+
+        requests.get(self.__full_url__('train_important_characteristics'))
+        requests.get(self.__full_url__('train_real_price'))
+
+        return r
 
 
     def real_price_indx(self, car_uuid: uuid.UUID):
