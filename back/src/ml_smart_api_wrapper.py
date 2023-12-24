@@ -28,7 +28,8 @@ class MlSmartApi(BaseApi):
         return r
 
 
-    def real_price_indx(self, car_uuid: uuid.UUID):
+    def real_price_indx(self, car: CarModelWithUUID):
+        car_uuid = car.car_id
         text = '{"ERROR": "Not in UUID - Index match!"}'
         if car_uuid in self.uuid2idx:
             url = self.__full_url__('real_price', self.uuid2idx[car_uuid])
@@ -36,7 +37,23 @@ class MlSmartApi(BaseApi):
             text = requests.get(url).text
         return text
 
-    def get_car_history_by_id(self, car_uuid: uuid.UUID):
+    def forecast_car_price(self, car: CarModelWithUUID):
+        car_uuid = car.car_id
+        text = '{"ERROR": "Not in UUID - Index match!"}'
+        if car_uuid in self.uuid2idx:
+            url = self.__full_url__('forecast_car_price', self.uuid2idx[car_uuid])
+
+            text = requests.get(url).text
+        return text
+
+    def important_characteristics(self):
+        url = self.__full_url__('important_characteristics')
+        text = requests.get(url).text
+
+        return json.loads(text)
+
+    def get_car_history_by_id(self, car: CarModelWithUUID):
+        car_uuid = car.car_id
         text = '{"ERROR": "Not in UUID - Index match!"}'
         if car_uuid in self.uuid2idx:
             url = self.__full_url__('car_history', self.uuid2idx[car_uuid])

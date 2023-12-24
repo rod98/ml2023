@@ -40,9 +40,9 @@ wconn: WrappedConnection = WrappedConnection(
 wconn.connect()
 
 app = FastAPI()
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+@app.get("/important_characteristics")
+async def ichars():
+    return smart_api.important_characteristics()
 
 @app.post("/init_db")
 async def init_db():
@@ -104,8 +104,9 @@ async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
         dcar = CarModelWithData(**ucar.model_dump())
 
         dcar.extra_data = {
-            'real_price': smart_api.real_price_indx      (ucar.car_id),
-            'history'   : smart_api.get_car_history_by_id(ucar.car_id),
+            'real_price'  : smart_api.real_price_indx      (ucar),
+            'history'     : smart_api.get_car_history_by_id(ucar),
+            'future_price': smart_api.forecast_car_price   (ucar),
         }
 
         dcars.append(dcar)
