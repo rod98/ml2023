@@ -6,7 +6,7 @@ class TelegramChat:
     def __init__(self, chat_data: dict):
         print('Created new chat with id =', chat_data['id'])
         self.chat_data = chat_data
-        self.model_formatter = ModelFormatter()
+        self.model_formatter = ModelFormatter(True)
 
     def _search(self, ml_api: MlApi, msg_text: str):
         print('? Search:')
@@ -45,7 +45,7 @@ class TelegramChat:
                 tokens = line.split()
                 jdata[tokens[0]] = tokens[-1]
                 print(f'+\t{"{0:35}".format(tokens[0])} = {tokens[-1]}')
-        jdata['seller'] = msg_from['username']
+        jdata['seller'] = '@' + msg_from['username']
         r = ml_api.create_car(jdata)
 
         print('~~~~~~~~~~~~~~~~~~')
@@ -75,52 +75,4 @@ class TelegramChat:
 
         for text in results:
             yield text
-
-
-
-            # limit = 10
-            #
-            # if len(text) > limit:
-            #     text = text[0:limit]
-            #     text.append('Найдено слишком много машин! Уточните запрос!')
-
-            # text = '\n\n\n'.join(text)
-
-            # print('Found:')
-            # print(text)
-            # try:
-            #     tokens = text.split()
-            #     print('tokens:', tokens)
-            #     first_token = tokens[0].lower().lstrip('/')
-            #     if first_token in ['raw_get', 'get', 'rawget']:
-            #         _id = tokens[-1]
-            #         text = ml_api.get_car(uuid.UUID(_id)).text
-            #         text = [model_formatter.format(text)]
-            #     elif first_token in ['search']:
-            #         # tokens = tokens[1:]
-            #         lines = text.split('\n')[1:]
-            #
-            #         criteria = {}
-            #         for line in lines:
-            #             tokens = line.split()
-            #             if len(tokens) == 2:
-            #                 tokens.append(tokens[-1])
-            #
-            #             print(f'{tokens[0]}\t is between {tokens[1]} and {tokens[2]}')
-            #             criteria[tokens[0]] = [tokens[1], tokens[2]]
-            #
-            #         texts = json.loads(ml_api.search_cars(criteria).text)
-            #         text  = [model_formatter.format(text) for text in texts]
-            #
-            #         limit = 10
-            #
-            #         if len(text) > limit:
-            #             text = text[0:limit]
-            #             text.append('Найдено слишком много машин! Уточните запрос!')
-            #
-            #         # text = '\n\n\n'.join(text)
-            #
-            #         # print('Found:')
-            #         # print(text)
-            #     elif first_token in ['create']:
 

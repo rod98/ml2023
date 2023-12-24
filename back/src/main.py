@@ -115,25 +115,39 @@ async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
     return dcars
 
 @app.get("/car/{car_id}")
-async def get_car(car_id: uuid.UUID) -> CarModel | EmptyModel:
+async def get_car(car_id: uuid.UUID, add_smart: bool = False) -> CarModelWithUUID | CarModelWithData | EmptyModel:
     try:
         query = mcq_car_wuuid.select_query(f"car_id = '{car_id}'")
 
-        res = wconn.execute_and_fetch_all(query)[0]
-        # print('----', res)
-        if not res:
-            return EmptyModel()
+        res = wconn.execute_and_fetch_all(query)
     except Exception as e:
         raise HTTPException(400, detail=str(e))
+    # print('----', res)
+    if len(res):
+        res = res[0]
+    else:
+        raise HTTPException(404, detail=f"Car with id='{car_id}' was not found")
+        # if not res:
+        #     return EmptyModel()
+    # except Exception as e:
+    #     raise HTTPException(400, detail=str(e))
 
-    return CarModel.model_validate(res)
+    car = CarModelWithUUID.model_validate(res)
+    if add_smart:
+        res = await smart_data_add(car)
+        if len(res) > 0:
+            return res[0]
+        else:
+            return EmptyModel(**{})
 
-@app.get("/car/{car_id}/price")
-async def get_price_for_car(car_id: uuid.UUID) -> float:
-    raise HTTPException(501)
+    return car
+
+# @app.get("/car/{car_id}/price")
+# async def get_price_for_car(car_id: uuid.UUID) -> float:
+#     raise HTTPException(501)
 
 @app.get("/car")
-async def search_cars(search_data: dict) -> list[CarModelWithData]:
+async def search_cars(search_data: dict) -> list[CarModelWithUUID]:
     try:
         conditions = []
         cars = []
@@ -149,7 +163,8 @@ async def search_cars(search_data: dict) -> list[CarModelWithData]:
         for r in res:
             cars.append(CarModelWithUUID.model_validate(r))
 
-        return await smart_data_add(*cars)
+        # return await smart_data_add(*cars)
+        return cars
 
         # return cars
     except Exception as e:
