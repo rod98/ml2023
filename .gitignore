@@ -9,3 +9,5 @@ telegram_bot.ini
 venv
 venv/
 ngrok.yml
+machine_learning/data/rf.pkl
+machine_learning/data/ic.json

@@ -4,6 +4,7 @@ from typing import Hashable, Optional, List
 from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
+import json
 
 from models import *
 from smart_functions_1 import *
@@ -25,7 +26,7 @@ async def root():
 
 @app.post("/init_data")
 async def init_data(data: CarModelList):
-    global global_data
+    #global global_data
     global global_data_converted
 
     # global_data.data = data.data
@@ -110,8 +111,9 @@ async def forecast_car_price(index: int) -> int:
     return forecast(car_history)
 
 
-@app.get('/important_characteristics')
-async def important_characteristics(data: CarModelList) -> Dict[str, float]:
+@app.get('/train_important_characteristics')
+async def train_important_characteristics():
+    important: Dict
 
     data_converted = global_data_converted
 
@@ -119,13 +121,40 @@ async def important_characteristics(data: CarModelList) -> Dict[str, float]:
 
     _, important = important_features(prepared_data)
 
-    return important
+    with open(IMP_CHARACS_FILEPATH, 'w+') as json_file:
+        json.dump(important, json_file)
 
-dropped_for_index = {}
+    return {"status": 200}
+
+
+@app.get('/important_characteristics')
+async def important_characteristics() -> Dict[str, float]:
+    important: Dict
+
+    if not os.path.exists(IMP_CHARACS_FILEPATH) or os.stat(IMP_CHARACS_FILEPATH).st_size == 0:
+        raise Exception('call train_important_characteristics before calling important_characteristics')
+
+    with open(IMP_CHARACS_FILEPATH) as json_file:
+        important = json.load(json_file)
+        #print(important)
+        return important
+
+
+@app.get('/train_real_price')
+async def train_real_price():
+    if global_data_converted.shape[0] < 10_000:
+        raise Exception('too small dataset for training')
+
+    data_converted = global_data_converted[1000:]
+    prepared_data, _ = prepare_data2(data_converted)
+    train_random_forest(prepared_data)
+
+    return {"status": 200}
+
 
 @app.get('/real_price/{index}')
 async def real_price_indx(index: int) -> float:
-    global dropped_for_index
+    #global dropped_for_index
     data_converted = global_data_converted
 
     column = data_converted.columns.values
@@ -134,28 +163,12 @@ async def real_price_indx(index: int) -> float:
     for i in column:
         car_info[i] = data_converted.iloc[[index]][i].values[0]
 
-    if not dropped_for_index.get(index, False):
-        data_converted.drop(index, axis=0, inplace=True)
-        dropped_for_index[index] = True
-
     prepared_data, label_encoder = prepare_data2(data_converted)
 
     price = predict_car_price(prepared_data, label_encoder, car_info)
 
     return price
 
-#@app.get('/real_price/')
-#async def real_price_indx(my_car: CarModelList) -> float:
-#
-#    data_converted = global_data_converted
-#    car_info = pd.DataFrame([vars(el) for el in my_car.data])
-#
-#    prepared_data, label_encoder = prepare_data2(data_converted)
-#    weights, _ = important_features(prepared_data)
-#
-#    price = calculate_fair_price_indx(label_encoder, weights, car_info)
-#
-#    return price
 
 @app.get('/write_advertisement/{index}')
 async def advertisement_indx(index: int, price: float = 20000.0) -> str:
@@ -165,7 +178,6 @@ async def advertisement_indx(index: int, price: float = 20000.0) -> str:
     res = write_advertisement_indx(data_converted, index, price)
 
     return res
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=API_PORT)
