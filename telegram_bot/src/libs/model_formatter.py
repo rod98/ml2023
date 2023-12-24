@@ -2,19 +2,19 @@ import json
 
 class ModelFormatter:
     translations = {
-        "year": "Год выпуска",
-        # "make":
-        "model": "Марка",
-        # trim: text
-        "body": "Корпус",
+        "year"        : "Год выпуска",
+        "make"        : "Марка",
+        "model"       : "Модель",
+        "trim"        : "Отделка",
+        "body"        : "Корпус",
         "transmission": "Трансмиссия",
-        "vin": "VIN",
-        "state": "Состояние",
-        "condition": "Состояние но другое",
-        "odometer": "Километраж",
-        "color": "Цвет",
-        "interior": "Интерьер",
-        "seller": "Продавец",
+        "vin"         : "VIN",
+        "state"       : "Штат",
+        "condition"   : "Состояние",
+        "odometer"    : "Километраж",
+        "color"       : "Цвет",
+        "interior"    : "Интерьер",
+        "seller"      : "Продавец",
         # mmr: text
         "sellingprice": "Цена",
         # car_id: a473caca - 449e-461c - a13b - b5219b883d95
@@ -52,7 +52,7 @@ class ModelFormatter:
                 key_text  = "{0:35}".format(key_text)
                 data_text = data[key]
 
-                if key not in ['seller', 'car_id', 'extra_data']:
+                if key not in ['seller', 'car_id', 'extra_data', 'saledate']:
                     car_state.append(f'{key_text} {data_text}')
 
             car_state = '\n'.join(car_state)

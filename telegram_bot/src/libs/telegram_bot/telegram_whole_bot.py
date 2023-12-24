@@ -25,6 +25,14 @@ class TelegramBot:
             {
                 'command'    : "analyze",
                 'description': "Получить смарт-анализ объявления по ID"
+            },
+            {
+                'command'    : "help",
+                'description': "Как мной пользоваться?"
+            },
+            {
+                'command'    : "start",
+                'description': "Ну привет ;)"
             }
         ]
         r = self.__telapi__.set_commands(commands)

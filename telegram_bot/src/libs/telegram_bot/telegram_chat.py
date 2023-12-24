@@ -46,6 +46,7 @@ class TelegramChat:
                 tokens = line.split()
                 jdata[tokens[0]] = tokens[-1]
                 print(f'+\t{"{0:35}".format(tokens[0])} = {tokens[-1]}')
+        jdata['saledate'] = ""
         jdata['seller'] = '@' + msg_from['username']
         r = ml_api.create_car(jdata)
 
@@ -56,7 +57,7 @@ class TelegramChat:
         # print('~~~~~~~~~~~~~~~~~~')
 
         # return [self.model_formatter.format(r.text)]
-        return r
+        return [r]
 
     def process_message(self, ml_api: MlApi, msg_from: dict, msg_text: str, msg_entities: dict = {}):
         # for x in msg_text:
@@ -78,6 +79,12 @@ class TelegramChat:
             elif msg_entities[0]['text'] == '/get':
                 car_id = msg_text.strip()
                 results = [ml_api.get_car(car_id, False)]
+            elif msg_entities[0]['text'] == '/help':
+                t = ml_api.get_imp_chars()
+                tt = []
+                for k in t.keys():
+                    tt.append(f'{"{0:25}".format(k)} {t[k]}')
+                results = ['Коэффициенты: <pre>' + '\n'.join(tt) + '</pre>']
             else:
                 results = ['Неизвестная комманда!']
         except Exception as e:

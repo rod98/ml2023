@@ -5,6 +5,9 @@ from .base_api_wrapper import BaseApi
 import json
 
 class MlApi(BaseApi):
+    def get_imp_chars(self):
+        return json.loads(requests.get(self.__full_url__('important_characteristics')).text)
+
     def get_car(self, car_id: uuid.UUID | str, add_smart = False):
         if isinstance(car_id, uuid.UUID):
             car_id = car_id.hex
