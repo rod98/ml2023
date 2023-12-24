@@ -72,9 +72,12 @@ class TelegramBot:
         )
 
         for response in responses:
-            self.__telapi__.send_message(
+            results = self.__telapi__.send_message(
                 chat_id,
                 response
             )
+            for result in results:
+                if not result.ok:
+                    print(result.status_code)
 
         print('-------------------------------------')

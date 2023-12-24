@@ -15,8 +15,8 @@ class ModelFormatter:
         "color"       : "Цвет",
         "interior"    : "Интерьер",
         "seller"      : "Продавец",
-        # mmr: text
-        "sellingprice": "Цена",
+        "mmr"         : "Оценка от MMR ($)",
+        "sellingprice": "Цена ($)",
         # car_id: a473caca - 449e-461c - a13b - b5219b883d95
     }
 

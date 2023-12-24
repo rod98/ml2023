@@ -24,10 +24,10 @@ class SimpleTelegramApi:
                 'parse_mode': 'html'
             }
 
-            r = requests.post(url, json=payload).json()
+            r = requests.post(url, json=payload)
             results.append(r)
 
-        return results[0]
+        return results
 
     def edit_message(self, chat_id, msg_id, text):
         url = f"https://api.telegram.org/bot{self.api_token}/editMessageText" #?chat_id={chat_id}&message_id={msg_id}"
