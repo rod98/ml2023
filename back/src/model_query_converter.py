@@ -126,7 +126,7 @@ class ModelQueryConverter:
                 return val.hex
             return val
         dump = obj.model_dump()
-        print('dump:', dump)
+        # print('dump:', dump)
         dump = [transform(dump[d]) for d in dump]
         return dump
 

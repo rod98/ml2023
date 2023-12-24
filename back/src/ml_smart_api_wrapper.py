@@ -4,48 +4,37 @@ import requests
 import uuid
 
 from base_api_wrapper import BaseApi
+from models import CarModelWithUUID
 
 class MlSmartApi(BaseApi):
-    def real_price_indx(self, full_data, our_car):
-        url = self.__full_url__('real_price', 0)
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.uuid2idx: dict[uuid.UUID, int] = {}
 
-        # print('u??', url)
-
-        our_car = our_car.model_dump()
-        for field in ['car_id', 'extra_data']:
-            if field in our_car:
-                del our_car[field]
-
-        data = [our_car]
-        data.extend(full_data)
+    def init_data(self, all_data: list[CarModelWithUUID]):
+        for idx, data in enumerate(all_data):
+            print(data)
+            self.uuid2idx[data.car_id] = idx
 
         payload = {
-            "data": data
+            'data': [data.model_dump(exclude={'car_id'}) for data in all_data]
         }
+        requests.post(self.__full_url__('init_data'), json=payload)
 
-        # print(payload)
 
-        return requests.get(url, json=payload)
+    def real_price_indx(self, car_uuid: uuid.UUID):
+        text = '{"ERROR": "Not in UUID - Index match!"}'
+        if car_uuid in self.uuid2idx:
+            url = self.__full_url__('real_price', self.uuid2idx[car_uuid])
 
-    def get_car_history_by_id(self, our_car):
-        url = self.__full_url__('car_history', 0)
+            text = requests.get(url).text
+        return text
 
-        # print('u??', url)
+    def get_car_history_by_id(self, car_uuid: uuid.UUID):
+        text = '{"ERROR": "Not in UUID - Index match!"}'
+        if car_uuid in self.uuid2idx:
+            url = self.__full_url__('car_history', self.uuid2idx[car_uuid])
 
-        our_car = our_car.model_dump()
-        for field in ['car_id', 'extra_data']:
-            if field in our_car:
-                del our_car[field]
-
-        data = [our_car]
-        # data.extend(full_data)
-
-        payload = {
-            "data": data
-        }
-
-        print(json.dumps(payload, indent=4))
-
-        text = requests.get(url, json=payload).text
+            text = requests.get(url).text
 
         return json.loads(text)

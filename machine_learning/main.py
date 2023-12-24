@@ -13,7 +13,7 @@ API_PORT: int = 8001
 
 app = FastAPI()
 
-global_data: CarModelList = None
+# global_data: CarModelList = None
 global_data_converted: pd.DataFrame = None
 
 @app.get("/")
@@ -28,10 +28,13 @@ async def init_data(data: CarModelList):
     global global_data
     global global_data_converted
 
-    global_data.data = data.data
-    global_data_converted = pd.DataFrame([vars(el) for el in global_data.data])
+    # global_data.data = data.data
+    global_data_converted = pd.DataFrame([vars(el) for el in data.data])
 
-    return {"message": "Hello machine learning"}
+    return {
+        "status": "ok",
+        "db size": len(data.data)
+    }
 
 
 @app.get('/show_similar_profitable/{index}')
@@ -58,6 +61,7 @@ async def show_similar_profitable_by_id(index: int, count: int = 5) -> List[CarM
     cars = [CarModel(**el) for el in data_converted.iloc[indicies].to_dict('records')]
     return cars
 
+global_dict_history = None
 
 @app.get('/car_history/{index}')
 async def get_car_history_by_id(index: int) -> List[int]:
@@ -68,13 +72,18 @@ async def get_car_history_by_id(index: int) -> List[int]:
     :query param index: index from the list above
     :return: list (200 elements) of price history
     """
+
     # convert from list to DataFrame
     data_converted = global_data_converted
+
+    global global_dict_history
+    if not global_dict_history:
+        global_dict_history = assign_history(data_converted)
+    dict_history = global_dict_history
 
     if index < 0 or index >= data_converted.shape[0]:
         raise HTTPException(status_code=422, detail="not valid index")
 
-    dict_history = assign_history(data_converted)
     car_history = generate_history_for_car(data_converted, dict_history, index, 10.0)
 
     return car_history

@@ -58,7 +58,8 @@ async def init_db():
     # except Exception as e:
     #     logs.append(e)
 
-    data_filename_list = glob.glob('data/car_prices*.csv')
+    data_filename_list = glob.glob('data/car_prices.aa.csv')
+    initial_data = []
     for csv_filename in data_filename_list:
         car_list = []
         with open(csv_filename, 'r') as csv_file:
@@ -69,10 +70,13 @@ async def init_db():
                     new_id = uuid.uuid4()
                     uuid_car = CarModelWithUUID(new_id, **car.model_dump())
                     car_list.append(mcq_car_wuuid.model2list(uuid_car))
+
+                    initial_data.append(uuid_car)
                     # wconn.
                 except Exception as e:
                     print(e)
                     print(row)
+                    raise e
 
         new_id = uuid.uuid4()
         # print(type(new_id))
@@ -82,6 +86,9 @@ async def init_db():
             query,
             car_list
         )
+        # initial_data.extend(car_list)
+
+    smart_api.init_data(initial_data)
 
     return {"message": "DB initialization"}
 
@@ -93,9 +100,10 @@ async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
         # car = ucar.model_dump()
         dcar = CarModelWithData(**ucar.model_dump())
 
-        res = smart_api.real_price_indx(data, ucar)
-        print(res)
-        res = smart_api.get_car_history_by_id(ucar)
+        res = smart_api.real_price_indx(ucar.car_id)
+        dcar.extra_data['real_price'] = res
+        # print(res)
+        res = smart_api.get_car_history_by_id(ucar.car_id)
         # print(res)
         dcar.extra_data['history'] = res
 
@@ -142,12 +150,6 @@ async def search_cars(search_data: dict) -> list[CarModelWithData]:
             cars.append(CarModelWithUUID.model_validate(r))
             # train_cars.append(CarModel.model_validate(r))
 
-        # car_list = CarModelList(data=train_cars)
-        # for idx in range(len(cars)):
-        #     r = await mlearn.real_price_indx(car_list, 0)
-        #     print('Recommended price:')
-        #     print(r)
-        #     cars[idx].extra_data['recommended_price'] = r
         return await smart_data_add(*cars)
 
         # return cars
