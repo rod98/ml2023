@@ -4,7 +4,7 @@ import numpy as np
 from typing import Tuple, Dict, List
 import random
 from pmdarima import auto_arima
-
+import os
 import random
 
 seed: int = 322
@@ -12,7 +12,7 @@ seed: int = 322
 random.seed(seed)
 np.random.seed(seed)
 
-def prepare_data(input_data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def prepare_data(input_data: pd.DataFrame) -> pd.DataFrame:
     data = input_data.copy()
 
     data.reset_index(drop=True, inplace=True)
@@ -78,6 +78,7 @@ def generate_timeseries_patterns() -> Dict[str, np.array]:
     limit: int = 200
 
     def get_diffs(path: str, value_col: str) -> np.array:
+        #print(os.getcwd())
         df = pd.read_csv(path)
         values =  df[value_col][:limit].to_numpy()
         return np.diff(values)

@@ -6,7 +6,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import mean_squared_error
 from gigachat import GigaChat
+import os
+import pickle
+#from sklearn.externals import joblib
+import joblib
 
+RF_FILEPATH = 'data/rf.pkl'
+IMP_CHARACS_FILEPATH = 'data/ic.json'
 
 def add_column_to_dataframe(input_data):
     text1 = "Продается Kia Sorento LX года выпуска. Автомобиль оснащен автоматической коробкой передач и имеет пробег 16639.0 миль. VIN: 5xyktca69fg566472. Цвет кузова - белый, цвет салона - черный. Оценка состояния авто (город/шоссе): 5.0. Продавец: Kia Motors America, Inc. Цена: $20500-$21500. Местонахождение: Калифорния, CA. Дата выпуска: Tue Dec 16 2014 12:30:00 GMT-0800 (PST). Дополнительные фотографии и информация доступны по запросу. Свяжитесь для получения более подробной информации."
@@ -86,8 +92,7 @@ def important_features(prepared_data):
     return importance, res
 
 
-def predict_car_price(prepared_data, label_encoder, car_info):
-    # car_info = {'year': 2015, 'make': 'Toyota', 'model': 'Camry', 'trim': 'LE', 'body': 'Sedan', 'transmission': 'automatic', 'condition': 4.5,	'odometer': 50000, 'color': 'blue', 'interior': 'black', 'seller': 'kia motors america, inc'}
+def train_random_forest(prepared_data):
     cur_data = prepared_data.copy()
 
     model = RandomForestRegressor(random_state=42)
@@ -95,6 +100,25 @@ def predict_car_price(prepared_data, label_encoder, car_info):
     x = cur_data.drop(columns=columns_to_drop)
     y = cur_data['sellingprice']
     model.fit(x, y)
+    #pickle.dumps(model, open(RF_FILEPATH, 'wb+'))
+    joblib.dump(model, RF_FILEPATH) 
+
+
+def predict_car_price(prepared_data, label_encoder, car_info):
+    # car_info = {'year': 2015, 'make': 'Toyota', 'model': 'Camry', 'trim': 'LE', 'body': 'Sedan', 'transmission': 'automatic', 'condition': 4.5,	'odometer': 50000, 'color': 'blue', 'interior': 'black', 'seller': 'kia motors america, inc'}
+    cur_data = prepared_data.copy()
+
+    #model = RandomForestRegressor(random_state=42)
+    columns_to_drop = ['sellingprice', 'mmr']
+    x = cur_data.drop(columns=columns_to_drop)
+    #y = cur_data['sellingprice']
+    #model.fit(x, y)
+    
+    if not os.path.exists(RF_FILEPATH) or os.stat(RF_FILEPATH).st_size == 0:
+        raise Exception(f'call train_real_price before calling real_price')
+
+    #model = pickle.load(open(RF_FILEPATH, 'rb'))
+    model = joblib.load(RF_FILEPATH)
 
     car_info_encoded = []
     for info in car_info.keys():
