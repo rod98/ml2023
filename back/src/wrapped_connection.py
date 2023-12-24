@@ -37,10 +37,10 @@ class WrappedConnection:
     def executemany(self, query: str, data: list|None = None):
         curs = self.conn.cursor()
         data = data if data else ['-']
-        print('-- wrapper:')
-        print('query:\n', query)
-        print('data:\n',  data)
-        print('--\n')
+        # print('-- wrapper:')
+        # print('query:\n', query)
+        # print('data:\n',  data)
+        # print('--\n')
         curs.executemany(query, data)
         self.conn.commit()
         curs.close()

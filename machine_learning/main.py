@@ -121,9 +121,11 @@ async def important_characteristics(data: CarModelList) -> Dict[str, float]:
 
     return important
 
+dropped_for_index = {}
+
 @app.get('/real_price/{index}')
 async def real_price_indx(index: int) -> float:
-
+    global dropped_for_index
     data_converted = global_data_converted
 
     column = data_converted.columns.values
@@ -131,8 +133,10 @@ async def real_price_indx(index: int) -> float:
     car_info = dict()
     for i in column:
         car_info[i] = data_converted.iloc[[index]][i].values[0]
-        
-    data_converted.drop(index, axis=0, inplace=True)
+
+    if not dropped_for_index.get(index, False):
+        data_converted.drop(index, axis=0, inplace=True)
+        dropped_for_index[index] = True
 
     prepared_data, label_encoder = prepare_data2(data_converted)
 

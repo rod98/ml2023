@@ -12,8 +12,9 @@ class MlSmartApi(BaseApi):
         self.uuid2idx: dict[uuid.UUID, int] = {}
 
     def init_data(self, all_data: list[CarModelWithUUID]):
+        self.uuid2idx = {}
         for idx, data in enumerate(all_data):
-            print(data)
+            # print(data)
             self.uuid2idx[data.car_id] = idx
 
         payload = {

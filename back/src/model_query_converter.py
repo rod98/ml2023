@@ -25,7 +25,7 @@ class ModelQueryConverter:
             tp = fs[field].annotation
             if isinstance(tp, str):
                 tp_str = str(tp).split('|')[0].strip()
-                print('type string:', tp_str)
+                # print('type string:', tp_str)
                 tp = self.__types.get(tp_str, tp)
 
             res[field] = self.__types.get(tp, tp)
@@ -63,7 +63,7 @@ class ModelQueryConverter:
             );
         """
 
-        print(query)
+        # print(query)
 
         return query 
     
@@ -75,7 +75,7 @@ class ModelQueryConverter:
             ({', '.join(self.model.model_fields.keys())}) VALUES
             ({', '.join(['%s'] * field_count)})
         """
-        print(query)
+        # print(query)
         return query
     
     def select_query(self, condition: str = None, return_internal = False) -> str:
@@ -94,7 +94,7 @@ class ModelQueryConverter:
             FROM {self.table}
             {cond};
         """
-        print(query)
+        # print(query)
         return query
     
     def update_query(self, condition: str = None, field_subset: list = None) -> str:
@@ -124,6 +124,8 @@ class ModelQueryConverter:
         def transform(val):
             if isinstance(val, uuid.UUID):
                 return val.hex
+            # if isinstance(val, str):
+            #     return f"'{val}'"
             return val
         dump = obj.model_dump()
         # print('dump:', dump)

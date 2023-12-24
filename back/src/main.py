@@ -58,9 +58,9 @@ async def init_db():
     # except Exception as e:
     #     logs.append(e)
 
-    data_filename_list = glob.glob('data/car_prices.aa.csv')
+    data_filename_list = glob.glob('data/car_prices.[abcd]*.csv')
     initial_data = []
-    for csv_filename in data_filename_list:
+    for idx, csv_filename in enumerate(data_filename_list):
         car_list = []
         with open(csv_filename, 'r') as csv_file:
             reader = csv.DictReader(csv_file)
@@ -74,6 +74,7 @@ async def init_db():
                     initial_data.append(uuid_car)
                     # wconn.
                 except Exception as e:
+                    print('---- ERROR ----')
                     print(e)
                     print(row)
                     raise e
@@ -86,6 +87,7 @@ async def init_db():
             query,
             car_list
         )
+        print('Inserted:', len(car_list) * (idx + 1))
         # initial_data.extend(car_list)
 
     smart_api.init_data(initial_data)
@@ -94,14 +96,15 @@ async def init_db():
 
 async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
     dcars = []
-    for ucar in ucars[0:100]:
-        data = []
+    for udx, ucar in enumerate(ucars[0:100]):
+        # data = []
+        print(f'Adding smart info for car#{udx}')
 
         # car = ucar.model_dump()
         dcar = CarModelWithData(**ucar.model_dump())
 
-        res = smart_api.real_price_indx(ucar.car_id)
-        dcar.extra_data['real_price'] = res
+        # res = smart_api.real_price_indx(ucar.car_id)
+        # dcar.extra_data['real_price'] = res
         # print(res)
         res = smart_api.get_car_history_by_id(ucar.car_id)
         # print(res)
@@ -117,7 +120,7 @@ async def get_car(car_id: uuid.UUID) -> CarModel | EmptyModel:
         query = mcq_car_wuuid.select_query(f"car_id = '{car_id}'")
 
         res = wconn.execute_and_fetch_all(query)[0]
-        print('----', res)
+        # print('----', res)
         if not res:
             return EmptyModel()
     except Exception as e:
@@ -144,11 +147,7 @@ async def search_cars(search_data: dict) -> list[CarModelWithData]:
         query = mcq_car_wuuid.select_query(conditions)
         res   = wconn.execute_and_fetch_all(query)
         for r in res:
-            # raw
-            print('----', r)
-            # cars.append(CarModelWithData.model_validate(r))
             cars.append(CarModelWithUUID.model_validate(r))
-            # train_cars.append(CarModel.model_validate(r))
 
         return await smart_data_add(*cars)
 
