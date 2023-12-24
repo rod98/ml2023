@@ -28,14 +28,15 @@ class TelegramChat:
 
         # print(found)
 
-        texts = json.loads(found.text)
+        # texts = json.loads(found.text)
+        texts = found
 
         if not len(texts):
             texts = ['Ничего не найдено :(']
 
         for text in texts:
-            # yield str(text)
-            yield self.model_formatter.format(text)
+            yield text
+            # yield self.model_formatter.format(text)
 
     def _create(self, ml_api, msg_from, msg_text):
         jdata = {}
@@ -48,13 +49,14 @@ class TelegramChat:
         jdata['seller'] = '@' + msg_from['username']
         r = ml_api.create_car(jdata)
 
-        print('~~~~~~~~~~~~~~~~~~')
-        print(r.status_code)
-        print(r.json())
-        print(r.text)
-        print('~~~~~~~~~~~~~~~~~~')
+        # print('~~~~~~~~~~~~~~~~~~')
+        # print(r.status_code)
+        # print(r.json())
+        # print(r.text)
+        # print('~~~~~~~~~~~~~~~~~~')
 
-        return [self.model_formatter.format(r.text)]
+        # return [self.model_formatter.format(r.text)]
+        return r
 
     def process_message(self, ml_api: MlApi, msg_from: dict, msg_text: str, msg_entities: dict = {}):
         # for x in msg_text:
@@ -63,16 +65,24 @@ class TelegramChat:
         l = msg_entities[0]['length']
         msg_text = msg_text[o + l:]
 
+        results = []
+
         try:
             if msg_entities[0]['text'] == '/search':
                 results = self._search(ml_api, msg_text)
             elif msg_entities[0]['text'] == '/create':
                 results = self._create(ml_api, msg_from, msg_text)
+            elif msg_entities[0]['text'] == '/analyze':
+                car_id = msg_text.strip()
+                results = [ml_api.get_car(car_id, True)]
+            elif msg_entities[0]['text'] == '/get':
+                car_id = msg_text.strip()
+                results = [ml_api.get_car(car_id, False)]
             else:
                 results = ['Неизвестная комманда!']
         except Exception as e:
             results = [str(e)]
 
         for text in results:
-            yield text
+            yield self.model_formatter.format(text)
 

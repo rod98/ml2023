@@ -17,6 +17,14 @@ class TelegramBot:
             {
                 'command'    : "create",
                 'description': "Создать новое объявление о продаже машины"
+            },
+            {
+                'command'    : "get",
+                'description': "Получить объявление по ID"
+            },
+            {
+                'command'    : "analyze",
+                'description': "Получить смарт-анализ объявления по ID"
             }
         ]
         r = self.__telapi__.set_commands(commands)
