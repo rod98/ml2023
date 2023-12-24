@@ -187,17 +187,24 @@ class TunneledApp(Flask):
 
         # msg_body  = msg['message']
         # chat_body = msg_body['chat']
-        msg_text = msg['message']['text']
-        msg_from = msg['message']['from']
-        msg_chat = msg['message']['chat']
-        msg_ents = msg['message'].get('entities', {})
+        msg_key = ''
+        if 'message' in msg:
+            msg_key = 'message'
+        elif 'edited_message' in msg:
+            msg_key = 'edited_message'
 
-        self.bot.process_message(
-            msg_chat,
-            msg_from,
-            msg_text,
-            msg_ents
-        )
+        if msg_key:
+            msg_text = msg[msg_key]['text']
+            msg_from = msg[msg_key]['from']
+            msg_chat = msg[msg_key]['chat']
+            msg_ents = msg[msg_key].get('entities', {})
+
+            self.bot.process_message(
+                msg_chat,
+                msg_from,
+                msg_text,
+                msg_ents
+            )
 
 def create_app():
     tele_app = TunneledApp(__name__)

@@ -42,12 +42,15 @@ class TelegramBot:
             entity['text'] = msg_text[o:o + l]
             print('\t', entity['type'], '\t', entity['text'])
 
+        print('\n\n\n')
+
         if chat_id not in self.__chats__:
-            self.__chats__[chat_id] = TelegramChat(chat_id)
+            self.__chats__[chat_id] = TelegramChat(msg_chat)
 
         target_chat = self.__chats__[chat_id]
         responses = target_chat.process_message(
             self.__ml_api__,
+            msg_from,
             msg_text,
             msg_entities
         )

@@ -28,9 +28,13 @@ class ModelFormatter:
 
     def __init__(self, translate=False):
         self.translate = translate
+
     def format(self, data: dict | str) -> str:
         if isinstance(data, str):
-            data = json.loads(data)
+            try:
+                data = json.loads(data)
+            except Exception as e:
+                return data
 
         res = []
         # res.append('|Характеристика|Значение|')
@@ -48,6 +52,7 @@ class ModelFormatter:
         res = '\n'.join(res)
         res = '<pre>' + res[0:4000] + '</pre>\n'
 
-        res += self.__translate__('seller') + ': ' + '@' + data['seller']
+        if 'seller' in data:
+            res += self.__translate__('seller') + ': ' + '@' + data['seller']
 
         return res
