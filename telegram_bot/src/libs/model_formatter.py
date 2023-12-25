@@ -17,6 +17,9 @@ class ModelFormatter:
         "seller"      : "Продавец",
         "mmr"         : "Оценка от MMR ($)",
         "sellingprice": "Цена ($)",
+        'real_price'  : "Рекоменд. цена ($)",
+        'history'     : 'История цен',
+        'future_price': 'Предсказ. цена ($)',
         # car_id: a473caca - 449e-461c - a13b - b5219b883d95
     }
 
