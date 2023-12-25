@@ -56,9 +56,9 @@ class TunneledApp(Flask):
             msg_key = 'edited_message'
 
         if msg_key:
-            msg_text = msg[msg_key]['text']
-            msg_from = msg[msg_key]['from']
-            msg_chat = msg[msg_key]['chat']
+            msg_text = msg[msg_key].get('text', '')
+            msg_from = msg[msg_key].get('from', {})
+            msg_chat = msg[msg_key].get('chat', {})
             msg_ents = msg[msg_key].get('entities', {})
 
             self.bot.process_message(

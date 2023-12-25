@@ -102,40 +102,43 @@ class TelegramChat:
     def process_message(self, ml_api: MlApi, msg_from: dict, msg_text: str, msg_entities: dict = {}):
         # for x in msg_text:
         #     yield x
-        o = msg_entities[0]['offset']
-        l = msg_entities[0]['length']
-        msg_text = msg_text[o + l:]
-
         results = []
 
-        try:
-            if msg_entities[0]['text'] == '/search':
-                results = self._search(ml_api, msg_text)
-            elif msg_entities[0]['text'] == '/create':
-                results = self._create(ml_api, msg_from, msg_text)
-            elif msg_entities[0]['text'] == '/analyze':
-                car_id = msg_text.strip()
-                results = [ml_api.get_car(car_id, True)]
-            elif msg_entities[0]['text'] == '/get':
-                car_id = msg_text.strip()
-                results = [ml_api.get_car(car_id, False)]
-            elif msg_entities[0]['text'] == '/help':
-                t = ml_api.get_imp_chars()
-                tt = []
-                for k in t.keys():
-                    tt.append(f'{"{0:25}".format(k)} {t[k]}')
-                results = ['Коэффициенты: <pre>' + '\n'.join(tt) + '</pre>']
-                results.extend(self.help())
-            elif msg_entities[0]['text'] == '/start':
-                results = ["Здравствуй, дорогой новый пользователь сервиса покупки-продажи машин!"]
-                results.extend(self.help())
-            elif msg_entities[0]['text'] == '/similar':
-                car_id = msg_text.strip()
-                results = ml_api.find_similar(car_id)
-            else:
-                results = ['Неизвестная комманда!']
-        except Exception as e:
-            results = [str(e)]
+        if msg_text:
+            o = msg_entities[0]['offset']
+            l = msg_entities[0]['length']
+            msg_text = msg_text[o + l:]
+
+            msg_e_text = msg_entities[0]['text'].split('@')[0]
+
+            try:
+                if msg_e_text == '/search':
+                    results = self._search(ml_api, msg_text)
+                elif msg_e_text == '/create':
+                    results = self._create(ml_api, msg_from, msg_text)
+                elif msg_e_text == '/analyze':
+                    car_id = msg_text.strip()
+                    results = [ml_api.get_car(car_id, True)]
+                elif msg_e_text == '/get':
+                    car_id = msg_text.strip()
+                    results = [ml_api.get_car(car_id, False)]
+                elif msg_e_text == '/help':
+                    t = ml_api.get_imp_chars()
+                    tt = []
+                    for k in t.keys():
+                        tt.append(f'{"{0:25}".format(k)} {t[k]}')
+                    results = ['Коэффициенты: <pre>' + '\n'.join(tt) + '</pre>']
+                    results.extend(self.help())
+                elif msg_e_text == '/start':
+                    results = ["Здравствуй, дорогой новый пользователь сервиса покупки-продажи машин!"]
+                    results.extend(self.help())
+                elif msg_e_text == '/similar':
+                    car_id = msg_text.strip()
+                    results = ml_api.find_similar(car_id)
+                else:
+                    results = ['Неизвестная комманда!']
+            except Exception as e:
+                results = [str(e)]
 
         for text in results:
             print('yielding...', str(text)[:100])
