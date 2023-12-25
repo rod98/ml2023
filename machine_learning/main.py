@@ -37,6 +37,25 @@ async def init_data(data: CarModelList):
         "db size": len(data.data)
     }
 
+@app.post("/append_data")
+async def append_data(data: CarModelList):
+    global global_data_converted
+
+    # global_data.data = data.data
+    # global_data_converted = pd.DataFrame([vars(el) for el in data.data])
+    # data_converted = pd.DataFrame([vars(el) for el in data.data])
+    sizes = []
+    for el in data.data:
+        sizes.append(len(global_data_converted))
+        # global_data_converted.append(vars(el))
+        global_data_converted.loc[len(global_data_converted)] = vars(el)  # only use with a RangeIndex!
+
+    return {
+        "status" : "ok",
+        "db size": len(data.data),
+        "indexes": sizes
+    }
+
 
 @app.get('/show_similar_profitable/{index}')
 async def show_similar_profitable_by_id(index: int, count: int = 5) -> List[CarModel]:
