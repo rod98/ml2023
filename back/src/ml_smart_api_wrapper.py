@@ -27,6 +27,29 @@ class MlSmartApi(BaseApi):
 
         return r
 
+    def append_data(self, new_data: list[CarModelWithUUID]):
+        # self.uuid2idx = {}
+
+        # for idx, data in enumerate(new_data):
+        #     self.uuid2idx[data.car_id] = idx
+
+        payload = {
+            'data': [data.model_dump(exclude={'car_id'}) for data in new_data]
+        }
+        r = requests.post(self.__full_url__('append_data'), json=payload)
+
+        jr = json.loads(r.text)
+        # print(jr)
+        for idx, data in enumerate(new_data):
+            index = jr['indexes'][idx]
+            self.uuid2idx[data.car_id] = index
+            print(f'New match: {data.car_id} -> {index}')
+
+        # requests.get(self.__full_url__('train_important_characteristics'))
+        # requests.get(self.__full_url__('train_real_price'))
+
+        return r
+
 
     def real_price_indx(self, car: CarModelWithUUID):
         car_uuid = car.car_id

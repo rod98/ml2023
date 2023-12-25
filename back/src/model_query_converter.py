@@ -79,9 +79,9 @@ class ModelQueryConverter:
         return query
     
     def select_query(self, condition: str = None, return_internal = False) -> str:
-        cond = ''
+        cond = '1=1'
         if condition:
-            cond = f"WHERE {condition}"
+            cond += f" AND ({condition})"
 
         fields = []
         if return_internal:
@@ -92,7 +92,7 @@ class ModelQueryConverter:
         query = f"""
             SELECT {', '.join(fields)}
             FROM {self.table}
-            {cond};
+            WHERE {cond};
         """
         # print(query)
         return query

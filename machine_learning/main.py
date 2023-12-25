@@ -81,7 +81,7 @@ async def show_similar_profitable_by_id(index: int, count: int = 5) -> List[CarM
     cars = [CarModel(**el) for el in data_converted.iloc[indicies].to_dict('records')]
     return cars
 
-global_dict_history = None
+# global_dict_history = None
 
 @app.get('/car_history/{index}')
 async def get_car_history_by_id(index: int) -> List[int]:
@@ -96,10 +96,10 @@ async def get_car_history_by_id(index: int) -> List[int]:
     # convert from list to DataFrame
     data_converted = global_data_converted
 
-    global global_dict_history
-    if not global_dict_history:
-        global_dict_history = assign_history(data_converted)
-    dict_history = global_dict_history
+    # global global_dict_history
+    # if not global_dict_history:
+    #     global_dict_history = assign_history(data_converted)
+    dict_history = assign_history(data_converted)
 
     if index < 0 or index >= data_converted.shape[0]:
         raise HTTPException(status_code=422, detail="not valid index")

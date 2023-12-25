@@ -58,7 +58,7 @@ async def init_db():
     # except Exception as e:
     #     logs.append(e)
 
-    data_filename_list = glob.glob('data/car_prices.[abcd]*.csv')
+    data_filename_list = glob.glob('data/car_prices.[a]*.csv')
     initial_data = []
     for idx, csv_filename in enumerate(data_filename_list):
         car_list = []
@@ -92,7 +92,17 @@ async def init_db():
 
     smart_api.init_data(initial_data)
 
-    return {"message": "DB initialization"}
+    return {"message": "DB initialized"}
+
+@app.post("/init_smart")
+async def init_smart():
+    query = mcq_car_wuuid.select_query()
+    res = wconn.execute_and_fetch_all(query)
+    cars: list[CarModelWithUUID] = []
+    for r in res:
+        cars.append(CarModelWithUUID.model_validate(r))
+    smart_api.init_data(cars)
+    return {"message": "Smart Functions initialized"}
 
 async def smart_data_add(*ucars: CarModelWithUUID) -> List[CarModelWithData]:
     dcars = []
@@ -215,6 +225,8 @@ async def add_car(car: CarModel) -> CarModelWithData:
             [mcq_car_wuuid.model2list(uuid_car)]
         )
         # car['uuid'] = new_id
+
+        smart_api.append_data([uuid_car])
 
         # data_car = CarModelWithData(**uuid_car.model_dump())
         data_car = await smart_data_add(uuid_car)
