@@ -33,6 +33,10 @@ class TelegramBot:
             {
                 'command'    : "start",
                 'description': "Ну привет ;)"
+            },
+            {
+                'command'    : "similar",
+                'description': "Показать объявления, похожие на указанное"
             }
         ]
         r = self.__telapi__.set_commands(commands)

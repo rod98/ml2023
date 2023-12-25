@@ -95,6 +95,7 @@ class TelegramChat:
 
             "/get &lt;ID&gt; - Выводит объявление с указанным ID",
             "/analyze &lt;ID&gt; - выводит аналитическую смарт-информацию об объявлении, предлагаемую AI-powered сервисом проекта",
+            "/similar &lt;ID&gt; - Выводит объявления, похожие на объявление с указанным ID",
         ]
         return r
 
@@ -128,6 +129,9 @@ class TelegramChat:
             elif msg_entities[0]['text'] == '/start':
                 results = ["Здравствуй, дорогой новый пользователь сервиса покупки-продажи машин!"]
                 results.extend(self.help())
+            elif msg_entities[0]['text'] == '/similar':
+                car_id = msg_text.strip()
+                results = ml_api.find_similar(car_id)
             else:
                 results = ['Неизвестная комманда!']
         except Exception as e:
