@@ -4,7 +4,7 @@ import requests
 import uuid
 
 from base_api_wrapper import BaseApi
-from models import CarModelWithUUID
+from models import CarModelWithUUID, CarModel
 
 class MlSmartApi(BaseApi):
     def __init__(self, *args):
@@ -80,6 +80,16 @@ class MlSmartApi(BaseApi):
         text = '{"ERROR": "Not in UUID - Index match!"}'
         if car_uuid in self.uuid2idx:
             url = self.__full_url__('car_history', self.uuid2idx[car_uuid])
+
+            text = requests.get(url).text
+
+        return json.loads(text)
+
+    def similar(self, car: CarModelWithUUID) -> list[CarModel]:
+        car_uuid = car.car_id
+        text = '{"ERROR": "Not in UUID - Index match!"}'
+        if car_uuid in self.uuid2idx:
+            url = self.__full_url__('show_similar_profitable', self.uuid2idx[car_uuid])
 
             text = requests.get(url).text
 

@@ -58,7 +58,7 @@ async def init_db():
     # except Exception as e:
     #     logs.append(e)
 
-    data_filename_list = glob.glob('data/car_prices.[a]*.csv')
+    data_filename_list = glob.glob('data/car_prices.[abc]*.csv')
     initial_data = []
     for idx, csv_filename in enumerate(data_filename_list):
         car_list = []
@@ -237,3 +237,11 @@ async def add_car(car: CarModel) -> CarModelWithData:
         # raise e
         # return {'error': str(e)}
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get('/car/{car_id}/similar')
+async def get_similar_by_id(car_id: uuid.UUID):
+    query = mcq_car_wuuid.select_query(f"car_id = '{car_id.hex}'")
+    res = wconn.execute_and_fetch_all(query)
+    car = CarModelWithUUID.model_validate(res[0])
+
+    return smart_api.similar(car)
